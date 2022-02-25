@@ -1,0 +1,58 @@
+#+TITLE: Readme
+
+* Descrizione del progetto
+Su [questo-sito] è possibile registrare un account con cui si può tenere traccia di:
+- Anime visti
+- Manga letti
+- Visual novel giocate
+- Light novel lette
+
+Inoltre è possibile realizzare una lista di VTuber preferite tra le idol di:
+- HoloLive
+- /Indipendenti/
+
+** Home page
+Nella home page è possibile vedere una lista delle ultime uscite divise per categoria [anime, manga, LN, VN] e per genere [azione, horror, sportivo, sci-fi, ...].
+
+** Popolazione del database
+Sarà compito dell'utente registrato creare un nuovo record per aggiungere una serie di una specifica categoria al database.
+Una volta creato il record, chiunque altro sia registrato è in grado di apportare modifiche.
+Questo processo lo effettua attraverso una pagina di registrazione, dove l'utente dovrà inserire:
+
+*** ... per gli anime
+- Titolo
+- Tipo di anime [film, serie TV, speciale]
+- Stato pubblicazione
+    + Numero episodi se lo stato è *concluso*
+- Data di inizio/fine pubblicazione
+- Trama
+- Generi
+- Immagine di copertina
+
+*** ... per manga e light novel
+- Titolo
+- Stato pubblicazione
+  + Numero di capitoli e volumi se lo stato è *concluso*
+- Data di inizio/fine pubblicazione
+- Trama
+- Generi
+- Immagine di copertina
+
+*** ... per visual novel
+- Titolo
+- Link del seller
+- Trama
+- Generi
+- Immagine di copertina
+
+** Pagine VTuber
+Speciale pagina da cui poter partecipare alla stream della particolare VTuber direttamente, senza bisogno di recarsi sulla pagina YouTube dell'idol in questione.
+Se l'idol in questione non è attualmente live viene mostrata una pagina che notifica l'utente che lo stream è offline.
+
+Questa speciale pagina viene automaticamente creata per le idol _non_ indipendenti, per le VTuber indipendenti sarà compito dell'utente creare la loro pagina e fornire il link alla loro pagina YouTube.
+Una volta creata la pagina chiunque altro sia registrato è in grado di apportare modifiche.
+
+* Codice
+** Frontend - JS
+** Backend - PHP
+** Database - MariaDB
