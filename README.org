@@ -7,9 +7,7 @@ Su [questo-sito] è possibile registrare un account con cui si può tenere tracc
 - Visual novel giocate
 - Light novel lette
 
-Inoltre è possibile realizzare una lista di VTuber preferite tra le idol di:
-- HoloLive
-- /Indipendenti/
+Inoltre è possibile realizzare una lista di VTuber preferite, seguire le loro live e ricevere notifiche via e-mail quando sono in live.
 
 ** Home page
 Nella home page è possibile vedere una lista delle ultime uscite divise per categoria [anime, manga, LN, VN] e per genere [azione, horror, sportivo, sci-fi, ...].
@@ -46,18 +44,15 @@ Questo processo lo effettua attraverso una pagina di registrazione, dove l'utent
 - Immagine di copertina
 
 ** Pagine VTuber
-Speciale pagina da cui poter partecipare alla stream della particolare VTuber direttamente, senza bisogno di recarsi sulla pagina YouTube dell'idol in questione.
-Se l'idol in questione non è attualmente live viene mostrata una pagina che notifica l'utente che lo stream è offline.
+Speciale pagina da cui poter partecipare alla stream della particolare VTuber direttamente, senza bisogno di recarsi sulla pagina YouTube/Twitch dell'idol in questione.
+Se l'idol non è attualmente live viene mostrata una pagina che notifica l'utente che lo stream è offline.
 
-Questa speciale pagina viene automaticamente creata per le idol _non_ indipendenti, per le VTuber indipendenti sarà compito dell'utente creare la loro pagina e fornire il link alla loro pagina YouTube.
-Una volta creata la pagina chiunque altro sia registrato è in grado di apportare modifiche.
-
-* Realizzazione
+* Setup
 ** Configurazione ed installazione server
 *** Server web - Nginx
-Ho deciso di utilizzare Nginx come web server perchè offre performance nettamente migliori ed è più leggero di altri web server.
+Ho deciso di utilizzare Nginx come web server per le performance nettamente migliori e leggerezza in confronto ad altri web server.
 L'installazione viene effettuata tramite un docker container e la seguente container image:
-#+begin_src dockerfile :tangle containers/web/Dockerfile
+#+begin_src dockerfile :tangle dockerfiles/web/Dockerfile
 FROM php:8.1.4-fpm-alpine3.14
 WORKDIR /var/www/html
 
@@ -71,7 +66,53 @@ RUN docker-php-ext-install pdo pdo_mysql mysqli
 RUN docker-php-ext-enable pdo_mysql
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+RUN php-fpm &
 
 COPY nginx.conf /etc/nginx/nginx.conf
+CMD php-fpm -D && nginx -g "daemon off;"
 #+end_src
 
+Nginx utilizza il seguente file di configurazione:
+#+begin_src conf :tangle dockerfiles/web/nginx.conf
+user nginx;
+worker_processes 4;
+
+error_log /var/log/nginx/error.log warn;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+        server {
+               listen 80 default_server;
+               listen [::]:80 default_server;
+
+               root /var/www/html;
+               index index.php index.html index.htm index.nginx-debian.html;
+               server_name _;
+
+               location / {
+                        try_files $uri $uri/ =404;
+                }
+
+                location ~ \.php$ {
+                        fastcgi_pass      127.0.0.1:9000;
+                        fastcgi_index     index.php;
+                        include           fastcgi.conf;
+                }
+        }
+}
+#+end_src
+
+*** Server database - MariaDB
+L'installazione del database server mariadb viene anch'essa eseguita tramite un docker container e la container image disponibile su [[https://hub.docker.com/_/mariadb][hub.docker]] per cui non ha bisogno di alcuna configurazione.
+
+** Esecuzione server
+Eseguire i seguenti comandi a riga di comando per creare e avviare i container:
+#+begin_src sh
+docker build -t nomeContainerImage dockerfiles/web
+docker run -dp 80:80 -v "$PWD/www/pub":/var/www/html nomeContainerImage
+
+docker run -dp 3306:3306 -v "$PWD/DBfiles":/var/lib/mysql -e MARIADB_ROOT_PASSWORD=root --name animedb mariadb:latest --port 3306
+#+end_src
