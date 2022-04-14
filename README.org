@@ -11,6 +11,7 @@
 - [[#realizzazione][Realizzazione]]
   - [[#entry-point---indexphp][Entry point - index.php]]
   - [[#core][Core]]
+  - [[#views][Views]]
 
 * Descrizione del progetto
 Su [questo-sito] è possibile registrare un account con cui si può tenere traccia di:
@@ -105,17 +106,18 @@ http {
                server_name _;
 
                location / {
-                        try_files $uri $uri/ =404;
-                }
+                    try_files $uri $uri/ /index.php?$args;
+               }
 
-                location ~ \.php$ {
-                        fastcgi_pass      127.0.0.1:9000;
-                        fastcgi_index     index.php;
-                        include           fastcgi.conf;
-                }
+               location ~ \.php$ {
+                    fastcgi_pass      127.0.0.1:9000;
+                    fastcgi_index     index.php;
+                    include           fastcgi.conf;
+               }
         }
 }
 #+end_src
+
 
 *** Server database - MariaDB
 L'installazione del database server mariadb viene anch'essa eseguita tramite un docker container e la container image disponibile su [[https://hub.docker.com/_/mariadb][hub.docker]] per cui non ha bisogno di alcuna configurazione.
@@ -141,13 +143,13 @@ La home page, si occupa di inizializzare l'applicazione ed impostare le route co
 require_once __DIR__."/../vendor/autoload.php";
 use app\core\Application;
 
-$app = new Application();
+$app = new Application(dirname(__DIR__));
 
-$app->router->get("/", function() {
-    return "Hello World!";
-});
-$app->router->get("/contact", function() {
-    return "Contact me!";
+$app->router->get("/", "home");
+$app->router->get("/contact", "contact");
+
+$app->router->post("/contact", function() {
+    echo "handling submitted data";
 });
 
 $app->run();
@@ -165,14 +167,22 @@ namespace app\core;
 class Application {
     public Router $router;
     public Request $req;
+    public Response $res;
 
-    public function __construct() {
+    public static Application $app;
+    public static string $ROOT_DIR;
+
+    public function __construct(string $root) {
+        self::$ROOT_DIR = $root;
+        self::$app = $this;
+
         $this->req = new Request();
-        $this->router = new Router($this->req);
+        $this->res = new Response();
+        $this->router = new Router($this->req, $this->res);
     }
 
     public function run() {
-        $this->router->resolve();
+        echo $this->router->resolve();
     }
 }
 ?>
@@ -208,16 +218,20 @@ Metodi:
 
 #+begin_src php :tangle www/core/Router.php
 <?php
+
 namespace app\core;
 
 class Router
 {
-    public Request $req;
     private array $routes = [];
 
-    public function __construct(Request $req)
+    public Request $req;
+    public Response $res;
+
+    public function __construct(Request $req, Response $res)
     {
         $this->req = $req;
+        $this->res = $res;
     }
 
     public function get($path, $callback)
@@ -237,11 +251,34 @@ class Router
         $method = $this->req->getMethod();
         $callback = $this->routes[$method][$path] ?? false;
 
-        if ($callback) {
-            echo call_user_func($callback);
+        if (is_string($callback)) {
+            echo $this->renderView($callback);
+        } else if ($callback) {
+            return call_user_func($callback);
         } else {
-            echo "Not found!";
+            $this->res->setStatusCode(404);
+            echo $this->renderView("404");
         }
+    }
+
+    public function renderView(string $view)
+    {
+        $layoutContent = $this->loadLayoutContent();
+        $viewContent = $this->loadViewContent($view);
+
+        return str_replace("{{content}}", $viewContent, $layoutContent);
+    }
+
+    private function loadLayoutContent() {
+        ob_start();
+        include_once Application::$ROOT_DIR."/views/layouts/main.php";
+        return ob_get_clean();
+    }
+
+    private function loadViewContent(string $view) {
+        ob_start();
+        include_once Application::$ROOT_DIR."/views/$view.php";
+        return ob_get_clean();
     }
 }
 ?>
@@ -278,4 +315,52 @@ class Request {
     }
 }
 ?>
+#+end_src
+
+*** Response class
+#+begin_src php :tangle www/core/Response.php
+<?php
+namespace app\core;
+
+class Response {
+    public function setStatusCode(int $code) {
+        http_response_code($code);
+    }
+}
+?>
+#+end_src
+
+** Views
+*** Home
+#+begin_src php :tangle www/views/home.php
+<h1>Hello, World!</h1>
+#+end_src
+
+*** Contact
+#+begin_src php :tangle www/views/contact.php
+<h1>Contact page</h1>
+
+    <div class="container">
+<form action="" method="post">
+  <div class="mb-3">
+    <label for="exampleInputEmail1" class="form-label">Email address</label>
+    <input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
+    <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div>
+  </div>
+  <div class="mb-3">
+    <label for="exampleInputPassword1" class="form-label">Password</label>
+    <input type="password" class="form-control" id="exampleInputPassword1">
+  </div>
+  <div class="mb-3 form-check">
+    <input type="checkbox" class="form-check-input" id="exampleCheck1">
+    <label class="form-check-label" for="exampleCheck1">Check me out</label>
+  </div>
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+</div>
+#+end_src
+
+*** 404
+#+begin_src php :tangle www/views/404.php
+<h1>404 - File not found!</h1>
 #+end_src
