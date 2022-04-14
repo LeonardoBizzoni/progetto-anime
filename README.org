@@ -112,7 +112,116 @@ L'installazione del database server mariadb viene anch'essa eseguita tramite un 
 Eseguire i seguenti comandi a riga di comando per creare e avviare i container:
 #+begin_src sh
 docker build -t nomeContainerImage dockerfiles/web
-docker run -dp 80:80 -v "$PWD/www/pub":/var/www/html nomeContainerImage
+docker run -dp 80:80 -v "$PWD/www":/var/www/html nomeContainerImage
 
 docker run -dp 3306:3306 -v "$PWD/DBfiles":/var/lib/mysql -e MARIADB_ROOT_PASSWORD=root --name animedb mariadb:latest --port 3306
+#+end_src
+
+* Realizzazione
+La web app è strutturata seguendo il *Model View Controller* framework.
+Per gestire le dipendenze e namespaces di PHP viene utilizzato *composer*.
+
+** Entry point - index.php
+#+begin_src php :tangle www/pub/index.php
+<?php
+require_once __DIR__."/../vendor/autoload.php";
+use app\core\Application;
+
+$app = new Application();
+
+$app->router->get("/", function() {
+    return "Hello World!";
+});
+$app->router->get("/contact", function() {
+    return "Contact me!";
+});
+
+$app->run();
+?>
+#+end_src
+
+** Core
+*** Main application class
+#+begin_src php :tangle www/core/Application.php
+<?php
+namespace app\core;
+
+class Application {
+    public Router $router;
+    public Request $req;
+
+    public function __construct() {
+        $this->req = new Request();
+        $this->router = new Router($this->req);
+    }
+
+    public function run() {
+        $this->router->resolve();
+    }
+}
+?>
+#+end_src
+
+*** Router class
+#+begin_src php :tangle www/core/Router.php
+<?php
+namespace app\core;
+
+class Router
+{
+    public Request $req;
+    private array $routes = [];
+
+    public function __construct(Request $req)
+    {
+        $this->req = $req;
+    }
+
+    public function get($path, $callback)
+    {
+        $this->routes["get"][$path] = $callback;
+    }
+
+
+    public function resolve()
+    {
+        $path = $this->req->getPath();
+        $method = $this->req->getMethod();
+        $callback = $this->routes[$method][$path] ?? false;
+
+        if (!$callback) {
+            echo "Not found!";
+        } else {
+            echo call_user_func($callback);
+        }
+    }
+}
+?>
+#+end_src
+
+*** Request class
+#+begin_src php :tangle www/core/Request.php
+<?php
+namespace app\core;
+
+class Request {
+    public function getPath() {
+        $path = $_SERVER["REQUEST_URI"] ?? "/";
+        $position = strpos($path, "?");
+
+        if (!$position) {
+            return $path;
+        }
+        return substr($path, 0, $position);
+    }
+
+    public function getMethod() {
+        return strtolower($_SERVER["REQUEST_METHOD"]);
+    }
+
+    public function getBody() {
+        # TODO
+    }
+}
+?>
 #+end_src

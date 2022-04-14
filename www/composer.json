@@ -1,0 +1,15 @@
+{
+    "name": "leo/weeb-site",
+    "authors": [
+        {
+            "name": "LeonardoBizzoni",
+            "email": "leo2002714@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "app\\": "./"
+        }
+    },
+    "require": {}
+}
