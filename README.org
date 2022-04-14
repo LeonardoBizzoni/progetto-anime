@@ -1,5 +1,17 @@
 #+TITLE: Readme
 
+* Tabella dei contenuti :TOC:
+- [[#descrizione-del-progetto][Descrizione del progetto]]
+  - [[#home-page][Home page]]
+  - [[#popolazione-del-database][Popolazione del database]]
+  - [[#pagine-vtuber][Pagine VTuber]]
+- [[#setup][Setup]]
+  - [[#configurazione-ed-installazione-server][Configurazione ed installazione server]]
+  - [[#esecuzione-server][Esecuzione server]]
+- [[#realizzazione][Realizzazione]]
+  - [[#entry-point---indexphp][Entry point - index.php]]
+  - [[#core][Core]]
+
 * Descrizione del progetto
 Su [questo-sito] è possibile registrare un account con cui si può tenere traccia di:
 - Anime visti
