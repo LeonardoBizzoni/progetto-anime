@@ -122,6 +122,8 @@ La web app è strutturata seguendo il *Model View Controller* framework.
 Per gestire le dipendenze e namespaces di PHP viene utilizzato *composer*.
 
 ** Entry point - index.php
+La home page, si occupa di inizializzare l'applicazione ed impostare le route con annessa funzione di callback o *View*.
+
 #+begin_src php :tangle www/pub/index.php
 <?php
 require_once __DIR__."/../vendor/autoload.php";
@@ -142,6 +144,8 @@ $app->run();
 
 ** Core
 *** Main application class
+La classe principale, si occupa di instanziare il Router e la Request helper class.
+
 #+begin_src php :tangle www/core/Application.php
 <?php
 namespace app\core;
@@ -163,6 +167,33 @@ class Application {
 #+end_src
 
 *** Router class
+Una delle classi principali è il Router, gestisce l'array associativo "$routes" e la risoluzione delle varie request effettuate.
+
+L'array associativo "$routes" è diviso in 2 grandi sottogruppi:
+- sottogruppo "get"
+- sottogruppo "post"
+
+Ogni sottogruppo a sua volta è formato da 2 campi: "path" => "method".
+
+#+begin_example
+{
+    ["get"] => {
+        ["/"] => func(),
+        ["/test"] => func(),
+    },
+
+    ["post"] => {
+        ["/"] => func(),
+        ["/test"] => func(),
+    }
+}
+#+end_example
+
+Metodi:
+- "get()": imposta la route con metodo get
+- "post()": imposta la route con metodo post
+- "resolve()": utilizzando la Request helper class ricava quale funzione di callback chiamare sullo specifico path e metodo richiesto
+
 #+begin_src php :tangle www/core/Router.php
 <?php
 namespace app\core;
@@ -182,6 +213,11 @@ class Router
         $this->routes["get"][$path] = $callback;
     }
 
+    public function post($path, $callback)
+    {
+        $this->routes["post"][$path] = $callback;
+    }
+
 
     public function resolve()
     {
@@ -189,10 +225,10 @@ class Router
         $method = $this->req->getMethod();
         $callback = $this->routes[$method][$path] ?? false;
 
-        if (!$callback) {
-            echo "Not found!";
-        } else {
+        if ($callback) {
             echo call_user_func($callback);
+        } else {
+            echo "Not found!";
         }
     }
 }
@@ -200,6 +236,12 @@ class Router
 #+end_src
 
 *** Request class
+Una classe helper, analizza le requests e restituisce l'informazione necessaria al richiedente.
+
+Metodi:
+- "getPath()": restituisce il path richiesto, se viene passata una query string insieme al path essa non viene restituita. (Utile a Router resolve())
+- "getMethod()": restituisce il metodo utilizzato nella request in minuscolo. (Utile a Router resolve())
+
 #+begin_src php :tangle www/core/Request.php
 <?php
 namespace app\core;
