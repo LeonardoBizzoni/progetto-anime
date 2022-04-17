@@ -12,7 +12,6 @@
   - [[#entry-point---indexphp][Entry point - index.php]]
   - [[#core][Core]]
   - [[#models][Models]]
-  - [[#views][Views]]
   - [[#controllers][Controllers]]
 
 * Descrizione del progetto
@@ -66,60 +65,9 @@ Se l'idol non è attualmente live viene mostrata una pagina che notifica l'utent
 ** Configurazione ed installazione server
 *** Server web - Nginx
 Ho deciso di utilizzare Nginx come web server per le performance nettamente migliori e leggerezza in confronto ad altri web server.
-L'installazione viene effettuata tramite un docker container e la seguente container image:
-#+begin_src dockerfile :tangle dockerfiles/web/Dockerfile
-FROM php:8.1.4-fpm-alpine3.14
-WORKDIR /var/www/html
 
-RUN apk update && apk add --no-cache \
-    php8 \
-    php8-fpm \
-    php8-mysqli \
-    nginx
-
-RUN docker-php-ext-install pdo pdo_mysql mysqli
-RUN docker-php-ext-enable pdo_mysql
-
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-RUN php-fpm &
-
-COPY nginx.conf /etc/nginx/nginx.conf
-CMD php-fpm -D && nginx -g "daemon off;"
-#+end_src
-
-Nginx utilizza il seguente file di configurazione:
-#+begin_src conf :tangle dockerfiles/web/nginx.conf
-user nginx;
-worker_processes 4;
-
-error_log /var/log/nginx/error.log warn;
-
-events {
-    worker_connections 1024;
-}
-
-http {
-        server {
-               listen 80 default_server;
-               listen [::]:80 default_server;
-
-               root /var/www/html/pub;
-               index index.php index.html index.htm index.nginx-debian.html;
-               server_name _;
-
-               location / {
-                    try_files $uri $uri/ /index.php?$args;
-               }
-
-               location ~ \.php$ {
-                    fastcgi_pass      127.0.0.1:9000;
-                    fastcgi_index     index.php;
-                    include           fastcgi.conf;
-               }
-        }
-}
-#+end_src
-
+L'installazione viene effettuata tramite un docker container e la seguente [[./dockerfiles/web/Dockerfile][container image]].
+Nginx utilizza il seguente [[./dockerfiles/web/nginx.conf][file di configurazione]].
 
 *** Server database - MariaDB
 L'installazione del database server mariadb viene anch'essa eseguita tramite un docker container e la container image disponibile su [[https://hub.docker.com/_/mariadb][hub.docker]] per cui non ha bisogno di alcuna configurazione.
@@ -138,7 +86,7 @@ La web app è strutturata seguendo il *Model View Controller* framework.
 Per gestire le dipendenze e namespaces di PHP viene utilizzato *composer*.
 
 ** Entry point - index.php
-La home page, si occupa di inizializzare l'applicazione ed impostare le route con annessa funzione di callback o *View*.
+La home page, si occupa di inizializzare l'applicazione ed impostare le route con annesso array [Controller, metodo].
 
 #+begin_src php :tangle www/pub/index.php
 <?php
@@ -168,7 +116,15 @@ $app->run();
 
 ** Core
 *** Main application class
-La classe principale, si occupa di instanziare il Router e la Request helper class.
+La classe principale, si occupa di istanziare:
+- la Router class
+- la Request helper class
+- la Response helper class
+
+Rappresenta il fulcro della web app.
+Rende possibile l'accesso a tutte le classi da essa istaziate tramite la viariabile statica "$app".
+
+Gestisce tutti i controller tramite "BaseController".
 
 #+begin_src php :tangle www/core/Application.php
 <?php
@@ -235,6 +191,9 @@ Metodi:
 - "get()": imposta la route con metodo get
 - "post()": imposta la route con metodo post
 - "resolve()": utilizzando la Request helper class ricava quale funzione di callback chiamare sullo specifico path e metodo richiesto
+- "renderView()": unisce la view al layout del controller che la gestisce per poi venire mostrata all'utente finale come un'unica pagina:
+  + "loadLayoutContent()": restituisce il contenuto del layout selezionato dal controller della specifica view
+  + "loadViewContent()": restituisce il contenuto della specifica view
 
 #+begin_src php :tangle www/core/Router.php
 <?php
@@ -319,6 +278,7 @@ Una classe helper, analizza le requests e restituisce l'informazione necessaria 
 Metodi:
 - "getPath()": restituisce il path richiesto, se viene passata una query string insieme al path essa non viene restituita. (Utile a Router resolve())
 - "getMethod()": restituisce il metodo utilizzato nella request in minuscolo. (Utile a Router resolve())
+- "getBody()": restituisce i valori inseriti nella richiesta, sia essa una GET o una POST.
 
 #+begin_src php :tangle www/core/Request.php
 <?php
@@ -356,9 +316,12 @@ class Request {
         return $body;
         }
 }
+?>
 #+end_src
 
 *** Response class
+Semplice helper class con il compiti di gestire dei parametri della response da inviare all'utente.
+
 #+begin_src php :tangle www/core/Response.php
 <?php
 namespace app\core;
@@ -372,6 +335,9 @@ class Response {
 #+end_src
 
 *** Base controller class
+Classe controller di base.
+Tutti i controller si basano su questa classe in questo modo hanno tutti la possibiltà di impostare layout diversi per le view richieste dall'utente e la capacità di renderizzarle.
+
 #+begin_src php :tangle www/core/BaseController.php
 <?php
 namespace app\core;
@@ -391,6 +357,15 @@ class BaseController {
 #+end_src
 
 *** Base model class
+Classe model di base.
+Tutti i model si basano su questa classe, facilmente permettendo:
+- lettura dei dati tramite il metodo "loadData($data)"
+- impostazione di regole tramite il metodo astratto "rules()" e le costanti "RULE_*"
+- verifica della correttezza dei dati inseriti dall'utente tramite il metodo "validate()"
+- notificazione della presenza di errori all'utente tramite i metodi:
+  + "addError()"
+  + "errorMessage()"
+
 #+begin_src php :tangle www/core/BaseModel.php
 <?php
 namespace app\core;
@@ -469,7 +444,12 @@ abstract class BaseModel {
 #+end_src
 
 ** Models
+Le classi "Model" gestiscono i dati presenti nel database e controlla che i dati seguano delle determinate regole.
+Tutte le classi Model derivano dalla classe "BaseModel".
+
 *** Registration model
+Il model di registrazione si occupa della gestione dei dati di nuovi utenti e dell'interazione con il database.
+
 #+begin_src php :tangle www/models/RegisterModel.php
 <?php
 namespace app\models;
@@ -501,105 +481,13 @@ class RegisterModel extends BaseModel {
 ?>
 #+end_src
 
-** Views
-*** Home
-#+begin_src php :tangle www/views/home.php
-<h1>Hello, World!</h1>
-<h3>Welcome, <?php echo $name ?>!</h1>
-#+end_src
-
-*** Contact
-#+begin_src php :tangle www/views/contact.php
-<h1>Contact page</h1>
-
-<div class="container">
-<form action="" method="post">
-  <div class="mb-3">
-    <label for="exampleInputEmail1" class="form-label">Email address</label>
-    <input name="email" type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
-    <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div>
-  </div>
-  <div class="mb-3">
-    <label for="exampleInputPassword1" class="form-label">Password</label>
-    <input name="pass" type="password" class="form-control" id="exampleInputPassword1">
-  </div>
-  <div class="mb-3 form-check">
-    <input name="check" type="checkbox" class="form-check-input" id="exampleCheck1">
-    <label class="form-check-label" for="exampleCheck1">Check me out</label>
-  </div>
-  <button type="submit" class="btn btn-primary">Submit</button>
-</form>
-</div>
-#+end_src
-
-*** Login
-#+begin_src php :tangle www/views/login.php
-<h1>Login page</h1>
-
-<div class="container">
-<form action="" method="post">
-  <div class="mb-3">
-    <label for="exampleInputEmail1" class="form-label">Email address</label>
-    <input name="email" type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
-    <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div>
-  </div>
-  <div class="mb-3">
-    <label for="exampleInputPassword1" class="form-label">Password</label>
-    <input name="pass" type="password" class="form-control" id="exampleInputPassword1">
-  </div>
-  <div class="mb-3 form-check">
-    <input name="check" type="checkbox" class="form-check-input" id="exampleCheck1">
-    <label class="form-check-label" for="exampleCheck1">Check me out</label>
-  </div>
-  <button type="submit" class="btn btn-primary">Submit</button>
-</form>
-</div>
-#+end_src
-
-*** Register
-#+begin_src php :tangle www/views/register.php
-<h1>Registration page</h1>
-
-<div class="container">
-    <form method="POST" class="row g-3">
-        <div class="col-md-4">
-            <label class="form-label">Firstname</label>
-            <input name="firstname" type="text" class="form-control">
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Lastname</label>
-            <input name="lastname" type="text" class="form-control">
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Email</label>
-            <input name="email" type="email" class="form-control">
-        </div>
-        <div class="col-md-12">
-            <label class="form-label">Username</label>
-            <input name="username" type="text" class="form-control">
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">Password</label>
-            <input name="pass" type="password" class="form-control">
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">Password confirm</label>
-            <input name="passConf" name="pass" type="password" class="form-control">
-        </div>
-        <div class="col-md-1">
-            <button type="submit" class="btn btn-primary">Submit</button>
-        </div>
-    </form>
-</div>
-#+end_src
-
-*** 404
-#+begin_src php :tangle www/views/404.php
-<h1>404 - File not found!</h1>
-#+end_src
-
 ** Controllers
+Le classi "Controller" svolgono il ruolo di ponte.
+Esse permettono ai dati di apparire nella View richiesta dall'utente una volta prelevati dal database o di venirvi inseriti tramite una form.
+
 *** General controller
+Generico controller, probabilmente da eliminare.
+
 #+begin_src php :tangle www/controllers/SiteController.php
 <?php
 namespace app\controllers;
@@ -632,6 +520,10 @@ class SiteController extends BaseController {
 #+end_src
 
 *** Authentication controller
+L'authentication controller ha 2 compiti fondamentali:
+- registrare nuovi utenti
+- permettere l'accesso ad utenti già registrati
+
 #+begin_src php :tangle www/controllers/AuthController.php
 <?php
 namespace app\controllers;
