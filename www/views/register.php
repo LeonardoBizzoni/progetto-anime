@@ -4,7 +4,7 @@
     <form method="POST" class="row g-3">
         <div class="col-md-4">
             <label class="form-label">Firstname</label>
-            <input name="name" type="text" class="form-control">
+            <input name="firstname" type="text" class="form-control">
         </div>
         <div class="col-md-4">
             <label class="form-label">Lastname</label>
@@ -26,8 +26,8 @@
             <label class="form-label">Password confirm</label>
             <input name="passConf" name="pass" type="password" class="form-control">
         </div>
-        <div class="col-12">
-            <button type="submit" class="btn btn-primary">Sign in</button>
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-primary">Submit</button>
         </div>
     </form>
 </div>
