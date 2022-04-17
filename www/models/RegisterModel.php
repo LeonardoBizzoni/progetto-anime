@@ -4,12 +4,12 @@ namespace app\models;
 use app\core\BaseModel;
 
 class RegisterModel extends BaseModel {
-    public string $firstname;
-    public string $lastname;
-    public string $email;
-    public string $username;
-    public string $pass;
-    public string $passConf;
+    public string $Firstname = "";
+    public string $Lastname = "";
+    public string $Email = "";
+    public string $Username = "";
+    public string $Password = "";
+    public string $Confirm = "";
 
     public function register() {
         echo "Creating new user";
@@ -17,11 +17,12 @@ class RegisterModel extends BaseModel {
 
     public function rules(): array {
         return [
-            "firstname" => [self::RULE_REQUIRED],
-            "lastname" => [self::RULE_REQUIRED],
-            "email" => [self::RULE_REQUIRED, self::RULE_EMAIL],
-            "pass" => [self::RULE_REQUIRED, [ self::RULE_MIN, "min" => 20 ], [ self::RULE_MAX, "max" => 100 ]],
-            "passConf" => [self::RULE_REQUIRED, [self::RULE_MATCH, "match" => "pass" ]]
+            "Firstname" => [self::RULE_REQUIRED],
+            "Lastname" => [self::RULE_REQUIRED],
+            "Username" => [self::RULE_REQUIRED],
+            "Email" => [self::RULE_REQUIRED, self::RULE_EMAIL],
+            "Password" => [self::RULE_REQUIRED, [ self::RULE_MIN, "min" => 20 ], [ self::RULE_MAX, "max" => 100 ]],
+            "Confirm" => [self::RULE_REQUIRED, [self::RULE_MATCH, "match" => "Password" ]]
         ];
     }
 }

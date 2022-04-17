@@ -88,32 +88,6 @@ Per gestire le dipendenze e namespaces di PHP viene utilizzato *composer*.
 ** Entry point - index.php
 La home page, si occupa di inizializzare l'applicazione ed impostare le route con annesso array [Controller, metodo].
 
-#+begin_src php :tangle www/pub/index.php
-<?php
-require_once __DIR__."/../vendor/autoload.php";
-
-use app\controllers\AuthController;
-use app\controllers\SiteController;
-use app\core\Application;
-
-$app = new Application(dirname(__DIR__));
-
-$app->router->get("/", [SiteController::class, "home"]);
-
-$app->router->get("/contact", [SiteController::class, "contact"]);
-$app->router->post("/contact", [SiteController::class, "handleContact"]);
-
-# User authentication
-$app->router->get("/login", [AuthController::class, "login"]);
-$app->router->post("/login", [AuthController::class, "login"]);
-
-$app->router->get("/register", [AuthController::class, "register"]);
-$app->router->post("/register", [AuthController::class, "register"]);
-
-$app->run();
-?>
-#+end_src
-
 ** Core
 *** Main application class
 La classe principale, si occupa di istanziare:
@@ -125,44 +99,6 @@ Rappresenta il fulcro della web app.
 Rende possibile l'accesso a tutte le classi da essa istaziate tramite la viariabile statica "$app".
 
 Gestisce tutti i controller tramite "BaseController".
-
-#+begin_src php :tangle www/core/Application.php
-<?php
-namespace app\core;
-
-class Application {
-    private BaseController $controller;
-
-    public Router $router;
-    public Request $req;
-    public Response $res;
-
-    public static Application $app;
-    public static string $ROOT_DIR;
-
-    public function __construct(string $root) {
-        self::$ROOT_DIR = $root;
-        self::$app = $this;
-
-        $this->req = new Request();
-        $this->res = new Response();
-        $this->router = new Router($this->req, $this->res);
-    }
-
-    public function run() {
-        echo $this->router->resolve();
-    }
-
-    public function getController() {
-        return $this->controller;
-    }
-
-    public function setController(BaseController $controller) {
-        $this->controller = $controller;
-    }
-}
-?>
-#+end_src
 
 *** Router class
 Una delle classi principali è il Router, gestisce l'array associativo "$routes" e la risoluzione delle varie request effettuate.
@@ -195,83 +131,6 @@ Metodi:
   + "loadLayoutContent()": restituisce il contenuto del layout selezionato dal controller della specifica view
   + "loadViewContent()": restituisce il contenuto della specifica view
 
-#+begin_src php :tangle www/core/Router.php
-<?php
-
-namespace app\core;
-
-class Router
-{
-    private array $routes = [];
-
-    public Request $req;
-    public Response $res;
-
-    public function __construct(Request $req, Response $res)
-    {
-        $this->req = $req;
-        $this->res = $res;
-    }
-
-    public function get($path, $callback)
-    {
-        $this->routes["get"][$path] = $callback;
-    }
-
-    public function post($path, $callback)
-    {
-        $this->routes["post"][$path] = $callback;
-    }
-
-
-    public function resolve()
-    {
-        $path = $this->req->getPath();
-        $method = $this->req->getMethod();
-        $callback = $this->routes[$method][$path] ?? false;
-
-        if (is_string($callback)) {
-            return $this->renderView($callback);
-        } else if (is_array($callback)) {
-            Application::$app->setController(new $callback[0]);
-            $callback[0] = Application::$app->getController();
-        } else {
-            $this->res->setStatusCode(404);
-            return $this->renderView("404");
-        }
-
-        return call_user_func($callback, $this->req);
-    }
-
-    public function renderView(string $view, array $params = [])
-    {
-        $layoutContent = $this->loadLayoutContent();
-        $viewContent = $this->loadViewContent($view, $params);
-
-        return str_replace("{{content}}", $viewContent, $layoutContent);
-    }
-
-    private function loadLayoutContent() {
-        $layout = Application::$app->getController()->layout;
-        ob_start();
-        include_once Application::$ROOT_DIR."/views/layouts/$layout.php";
-        return ob_get_clean();
-    }
-
-    private function loadViewContent(string $view, array $params) {
-        # modo epico per creare variabili con lo stesso nome assegnato nell'array!!
-        foreach ($params as $key => $value) {
-            $$key = $value;
-        }
-
-        ob_start();
-        include_once Application::$ROOT_DIR."/views/$view.php";
-        return ob_get_clean();
-    }
-}
-?>
-#+end_src
-
 *** Request class
 Una classe helper, analizza le requests e restituisce l'informazione necessaria al richiedente.
 
@@ -279,82 +138,6 @@ Metodi:
 - "getPath()": restituisce il path richiesto, se viene passata una query string insieme al path essa non viene restituita. (Utile a Router resolve())
 - "getMethod()": restituisce il metodo utilizzato nella request in minuscolo. (Utile a Router resolve())
 - "getBody()": restituisce i valori inseriti nella richiesta, sia essa una GET o una POST.
-
-#+begin_src php :tangle www/core/Request.php
-<?php
-namespace app\core;
-
-class Request {
-    public function getPath() {
-        $path = $_SERVER["REQUEST_URI"] ?? "/";
-        $position = strpos($path, "?");
-
-        if (!$position) {
-            return $path;
-        }
-        return substr($path, 0, $position);
-    }
-
-    public function getMethod() {
-        return strtolower($_SERVER["REQUEST_METHOD"]);
-    }
-
-    public function getBody() {
-        $body = [];
-
-        if ($this->getMethod() == "get") {
-            foreach ($_GET as $key => $value) {
-                $body[$key] = filter_input(INPUT_GET, $key, FILTER_SANITIZE_SPECIAL_CHARS);
-            }
-        }
-        else if ($this->getMethod() == "post") {
-            foreach ($_POST as $key => $value) {
-                $body[$key] = filter_input(INPUT_POST, $key, FILTER_SANITIZE_SPECIAL_CHARS);
-            }
-        }
-
-        return $body;
-        }
-}
-?>
-#+end_src
-
-*** Response class
-Semplice helper class con il compiti di gestire dei parametri della response da inviare all'utente.
-
-#+begin_src php :tangle www/core/Response.php
-<?php
-namespace app\core;
-
-class Response {
-    public function setStatusCode(int $code) {
-        http_response_code($code);
-    }
-}
-?>
-#+end_src
-
-*** Base controller class
-Classe controller di base.
-Tutti i controller si basano su questa classe in questo modo hanno tutti la possibiltà di impostare layout diversi per le view richieste dall'utente e la capacità di renderizzarle.
-
-#+begin_src php :tangle www/core/BaseController.php
-<?php
-namespace app\core;
-
-class BaseController {
-    public string $layout = "main";
-
-    public function render(string $view, array $params = []) {
-        return Application::$app->router->renderView($view, $params);
-    }
-
-    public function setLayout(string $layout) {
-        $this->layout = $layout;
-    }
-}
-?>
-#+end_src
 
 *** Base model class
 Classe model di base.
@@ -366,83 +149,6 @@ Tutti i model si basano su questa classe, facilmente permettendo:
   + "addError()"
   + "errorMessage()"
 
-#+begin_src php :tangle www/core/BaseModel.php
-<?php
-namespace app\core;
-
-abstract class BaseModel {
-    public const RULE_REQUIRED = "required";
-    public const RULE_EMAIL = "email";
-    public const RULE_MIN = "min";
-    public const RULE_MAX = "max";
-    public const RULE_MATCH = "match";
-    public const RULE_UNIQUE = "unique";
-
-    public array $errors = [];
-
-    public function loadData($data) {
-        foreach ($data as $key => $value) {
-            if (property_exists($this, $key)) {
-                $this->{$key} = $value;
-            }
-        }
-    }
-
-    abstract public function rules(): array;
-
-    public function validate() {
-        foreach ($this->rules() as $attribute => $rules) {
-            $value = $this->{$attribute};
-
-            foreach ($rules as $rule) {
-                $ruleName = $rule;
-
-                if (!is_string($ruleName)) {
-                    $ruleName = $rule[0];
-                }
-
-                if ($ruleName == self::RULE_REQUIRED && !$value) {
-                    $this->addError($attribute, self::RULE_REQUIRED);
-                }
-                if ($ruleName == self::RULE_EMAIL && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
-                    $this->addError($attribute, self::RULE_EMAIL);
-                }
-                if ($ruleName == self::RULE_MIN && strlen($value) < $rule["min"]) {
-                    $this->addError($attribute, self::RULE_MIN, $rule);
-                }
-                if ($ruleName == self::RULE_MAX && strlen($value) > $rule["max"]) {
-                    $this->addError($attribute, self::RULE_MAX, $rule);
-                }
-                if ($ruleName == self::RULE_MATCH && $value != $this->{$rule["match"]}) {
-                    $this->addError($attribute, self::RULE_MATCH, $rule);
-                }
-            }
-        }
-
-        return empty($this->errors);
-    }
-
-    public function addError(string $attribute, string $rule, $params = []) {
-        $message = $this->errorMessages()[$rule] ?? "";
-        foreach ($params as $key => $value) {
-            $message = str_replace("{{$key}}", $value, $message);
-        }
-        $this->errors[$attribute][] = $message;
-    }
-
-    public function errorMessages() {
-        return [
-            self::RULE_REQUIRED => "This field is required",
-            self::RULE_EMAIL => "This field must be a valid email address",
-            self::RULE_MIN => "Min length of this field must be {min}",
-            self::RULE_MAX => "Max length of this field must be {max}",
-            self::RULE_MATCH => "This field must be the same as {match}",
-        ];
-    }
-}
-?>
-#+end_src
-
 ** Models
 Le classi "Model" gestiscono i dati presenti nel database e controlla che i dati seguano delle determinate regole.
 Tutte le classi Model derivano dalla classe "BaseModel".
@@ -450,107 +156,17 @@ Tutte le classi Model derivano dalla classe "BaseModel".
 *** Registration model
 Il model di registrazione si occupa della gestione dei dati di nuovi utenti e dell'interazione con il database.
 
-#+begin_src php :tangle www/models/RegisterModel.php
-<?php
-namespace app\models;
+Attraverso l'implementazione del metodo astratto "rules()" si possono impostare le regole che i campi della form dovranno seguire.
+*Attenzione*: i nomi dei parametri, i nomi inseriti nella array resistituito da "rules()" ed i nomi dei [[./www/core/forms/Field.php][Field]] _devono_ essere uguali.
 
-use app\core\BaseModel;
-
-class RegisterModel extends BaseModel {
-    public string $firstname;
-    public string $lastname;
-    public string $email;
-    public string $username;
-    public string $pass;
-    public string $passConf;
-
-    public function register() {
-        echo "Creating new user";
-    }
-
-    public function rules(): array {
-        return [
-            "firstname" => [self::RULE_REQUIRED],
-            "lastname" => [self::RULE_REQUIRED],
-            "email" => [self::RULE_REQUIRED, self::RULE_EMAIL],
-            "pass" => [self::RULE_REQUIRED, [ self::RULE_MIN, "min" => 20 ], [ self::RULE_MAX, "max" => 100 ]],
-            "passConf" => [self::RULE_REQUIRED, [self::RULE_MATCH, "match" => "pass" ]]
-        ];
-    }
-}
-?>
-#+end_src
+# TODO: register()
 
 ** Controllers
 Le classi "Controller" svolgono il ruolo di ponte.
 Esse permettono ai dati di apparire nella View richiesta dall'utente una volta prelevati dal database o di venirvi inseriti tramite una form.
 
-*** General controller
-Generico controller, probabilmente da eliminare.
-
-#+begin_src php :tangle www/controllers/SiteController.php
-<?php
-namespace app\controllers;
-
-use app\core\BaseController;
-use app\core\Request;
-
-class SiteController extends BaseController {
-    public function home() {
-        $params = [
-            "name" => "Leonardo"
-        ];
-
-        return $this->render("home", $params);
-    }
-
-    public function contact() {
-        return $this->render("contact");
-    }
-
-    public function handleContact(Request $req) {
-        $body = $req->getBody();
-
-        # $body validation
-
-        return "Handling submitted data";
-    }
-}
-?>
-#+end_src
-
 *** Authentication controller
 L'authentication controller ha 2 compiti fondamentali:
-- registrare nuovi utenti
+- registrare nuovi utenti con l'aiuto della classe "RegisterModel"
 - permettere l'accesso ad utenti già registrati
-
-#+begin_src php :tangle www/controllers/AuthController.php
-<?php
-namespace app\controllers;
-
-use app\core\BaseController;
-use app\core\Request;
-use app\models\RegisterModel;
-
-class AuthController extends BaseController{
-    public function login() {
-        // $this->setLayout("auth");
-        return $this->render("login");
-    }
-
-    public function register(Request $req) {
-        // $this->setLayout("auth");
-        $errors = [];
-        $registerModel = new RegisterModel;
-
-        if ($req->getMethod() == "post") {
-            $registerModel->loadData($req->getBody());
-
-            if ($registerModel->validate() && $registerModel->register()) {
-                return "Success";
-            }
-        }
-        return $this->render("register", [ "model" => $registerModel ]);
-    }
-}
-#+end_src
+# TODO
