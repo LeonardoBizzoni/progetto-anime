@@ -1,4 +1,4 @@
-<h1>Contact page</h1>
+<h1>Login page</h1>
 
 <div class="container">
 <form action="" method="post">

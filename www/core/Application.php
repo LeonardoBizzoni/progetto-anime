@@ -2,6 +2,8 @@
 namespace app\core;
 
 class Application {
+    private BaseController $controller;
+
     public Router $router;
     public Request $req;
     public Response $res;
@@ -20,6 +22,14 @@ class Application {
 
     public function run() {
         echo $this->router->resolve();
+    }
+
+    public function getController() {
+        return $this->controller;
+    }
+
+    public function setController(BaseController $controller) {
+        $this->controller = $controller;
     }
 }
 ?>

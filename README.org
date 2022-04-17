@@ -11,6 +11,7 @@
 - [[#realizzazione][Realizzazione]]
   - [[#entry-point---indexphp][Entry point - index.php]]
   - [[#core][Core]]
+  - [[#controllers][Controllers]]
   - [[#views][Views]]
 
 * Descrizione del progetto
@@ -141,16 +142,24 @@ La home page, si occupa di inizializzare l'applicazione ed impostare le route co
 #+begin_src php :tangle www/pub/index.php
 <?php
 require_once __DIR__."/../vendor/autoload.php";
+
+use app\controllers\AuthController;
+use app\controllers\SiteController;
 use app\core\Application;
 
 $app = new Application(dirname(__DIR__));
 
-$app->router->get("/", "home");
-$app->router->get("/contact", "contact");
+$app->router->get("/", [SiteController::class, "home"]);
 
-$app->router->post("/contact", function() {
-    echo "handling submitted data";
-});
+$app->router->get("/contact", [SiteController::class, "contact"]);
+$app->router->post("/contact", [SiteController::class, "handleContact"]);
+
+# User authentication
+$app->router->get("/login", [AuthController::class, "login"]);
+$app->router->post("/login", [AuthController::class, "login"]);
+
+$app->router->get("/register", [AuthController::class, "register"]);
+$app->router->post("/register", [AuthController::class, "register"]);
 
 $app->run();
 ?>
@@ -165,6 +174,8 @@ La classe principale, si occupa di instanziare il Router e la Request helper cla
 namespace app\core;
 
 class Application {
+    private BaseController $controller;
+
     public Router $router;
     public Request $req;
     public Response $res;
@@ -183,6 +194,14 @@ class Application {
 
     public function run() {
         echo $this->router->resolve();
+    }
+
+    public function getController() {
+        return $this->controller;
+    }
+
+    public function setController(BaseController $controller) {
+        $this->controller = $controller;
     }
 }
 ?>
@@ -252,30 +271,39 @@ class Router
         $callback = $this->routes[$method][$path] ?? false;
 
         if (is_string($callback)) {
-            echo $this->renderView($callback);
-        } else if ($callback) {
-            return call_user_func($callback);
+            return $this->renderView($callback);
+        } else if (is_array($callback)) {
+            Application::$app->setController(new $callback[0]);
+            $callback[0] = Application::$app->getController();
         } else {
             $this->res->setStatusCode(404);
-            echo $this->renderView("404");
+            return $this->renderView("404");
         }
+
+        return call_user_func($callback, $this->req);
     }
 
-    public function renderView(string $view)
+    public function renderView(string $view, array $params = [])
     {
         $layoutContent = $this->loadLayoutContent();
-        $viewContent = $this->loadViewContent($view);
+        $viewContent = $this->loadViewContent($view, $params);
 
         return str_replace("{{content}}", $viewContent, $layoutContent);
     }
 
     private function loadLayoutContent() {
+        $layout = Application::$app->getController()->layout;
         ob_start();
-        include_once Application::$ROOT_DIR."/views/layouts/main.php";
+        include_once Application::$ROOT_DIR."/views/layouts/$layout.php";
         return ob_get_clean();
     }
 
-    private function loadViewContent(string $view) {
+    private function loadViewContent(string $view, array $params) {
+        # modo epico per creare variabili con lo stesso nome assegnato nell'array!!
+        foreach ($params as $key => $value) {
+            $$key = $value;
+        }
+
         ob_start();
         include_once Application::$ROOT_DIR."/views/$view.php";
         return ob_get_clean();
@@ -311,10 +339,22 @@ class Request {
     }
 
     public function getBody() {
-        # TODO
-    }
+        $body = [];
+
+        if ($this->getMethod() == "get") {
+            foreach ($_GET as $key => $value) {
+                $body[$key] = filter_input(INPUT_GET, $key, FILTER_SANITIZE_SPECIAL_CHARS);
+            }
+        }
+        else if ($this->getMethod() == "post") {
+            foreach ($_POST as $key => $value) {
+                $body[$key] = filter_input(INPUT_POST, $key, FILTER_SANITIZE_SPECIAL_CHARS);
+            }
+        }
+
+        return $body;
+        }
 }
-?>
 #+end_src
 
 *** Response class
@@ -330,33 +370,171 @@ class Response {
 ?>
 #+end_src
 
+*** Base controller class
+#+begin_src php :tangle www/core/BaseController.php
+<?php
+namespace app\core;
+
+class BaseController {
+    public string $layout = "main";
+
+    public function render(string $view, array $params = []) {
+        return Application::$app->router->renderView($view, $params);
+    }
+
+    public function setLayout(string $layout) {
+        $this->layout = $layout;
+    }
+}
+?>
+#+end_src
+
+** Controllers
+*** General controller
+#+begin_src php :tangle www/controllers/SiteController.php
+<?php
+namespace app\controllers;
+
+use app\core\BaseController;
+use app\core\Request;
+
+class SiteController extends BaseController {
+    public function home() {
+        $params = [
+            "name" => "Leonardo"
+        ];
+
+        return $this->render("home", $params);
+    }
+
+    public function contact() {
+        return $this->render("contact");
+    }
+
+    public function handleContact(Request $req) {
+        $body = $req->getBody();
+
+        # $body validation
+
+        return "Handling submitted data";
+    }
+}
+?>
+#+end_src
+
+*** Authentication controller
+#+begin_src php :tangle www/controllers/AuthController.php
+<?php
+namespace app\controllers;
+
+use app\core\BaseController;
+use app\core\Request;
+
+class AuthController extends BaseController{
+    public function login() {
+        $this->setLayout("auth");
+        return $this->render("login");
+    }
+
+    public function register(Request $req) {
+        $this->setLayout("auth");
+        if ($req->getMethod() == "post") {
+            return "Handling submitted data";
+        }
+        return $this->render("register");
+    }
+}
+#+end_src
+
 ** Views
 *** Home
 #+begin_src php :tangle www/views/home.php
 <h1>Hello, World!</h1>
+<h3>Welcome, <?php echo $name ?>!</h1>
 #+end_src
 
 *** Contact
 #+begin_src php :tangle www/views/contact.php
 <h1>Contact page</h1>
 
-    <div class="container">
+<div class="container">
 <form action="" method="post">
   <div class="mb-3">
     <label for="exampleInputEmail1" class="form-label">Email address</label>
-    <input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
+    <input name="email" type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
     <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div>
   </div>
   <div class="mb-3">
     <label for="exampleInputPassword1" class="form-label">Password</label>
-    <input type="password" class="form-control" id="exampleInputPassword1">
+    <input name="pass" type="password" class="form-control" id="exampleInputPassword1">
   </div>
   <div class="mb-3 form-check">
-    <input type="checkbox" class="form-check-input" id="exampleCheck1">
+    <input name="check" type="checkbox" class="form-check-input" id="exampleCheck1">
     <label class="form-check-label" for="exampleCheck1">Check me out</label>
   </div>
   <button type="submit" class="btn btn-primary">Submit</button>
 </form>
+</div>
+#+end_src
+
+*** Login
+#+begin_src php :tangle www/views/login.php
+<h1>Login page</h1>
+
+<div class="container">
+<form action="" method="post">
+  <div class="mb-3">
+    <label for="exampleInputEmail1" class="form-label">Email address</label>
+    <input name="email" type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
+    <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div>
+  </div>
+  <div class="mb-3">
+    <label for="exampleInputPassword1" class="form-label">Password</label>
+    <input name="pass" type="password" class="form-control" id="exampleInputPassword1">
+  </div>
+  <div class="mb-3 form-check">
+    <input name="check" type="checkbox" class="form-check-input" id="exampleCheck1">
+    <label class="form-check-label" for="exampleCheck1">Check me out</label>
+  </div>
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+</div>
+#+end_src
+
+*** Register
+#+begin_src php :tangle www/views/register.php
+<h1>Registration page</h1>
+
+<div class="container">
+    <form method="POST" class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">Firstname</label>
+            <input name="name" type="text" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Lastname</label>
+            <input name="lastname" type="text" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Email</label>
+            <input name="email" type="email" class="form-control">
+        </div>
+        <div class="col-md-12">
+            <label class="form-label">Username</label>
+            <input name="username" type="text" class="form-control">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Password</label>
+            <input name="pass" type="password" class="form-control">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Password confirm</label>
+            <input name="passConf" name="pass" type="password" class="form-control">
+        </div>
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary">Sign in</button>
+        </div>
+    </form>
 </div>
 #+end_src
 
