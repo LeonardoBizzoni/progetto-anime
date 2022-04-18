@@ -19,8 +19,8 @@ $app = new Application(dirname(__DIR__), $config);
 
 $app->router->get("/", [SiteController::class, "home"]);
 
-$app->router->get("/contact", [SiteController::class, "contact"]);
-$app->router->post("/contact", [SiteController::class, "handleContact"]);
+$app->router->get("/live", [SiteController::class, "live"]);
+$app->router->post("/live", [SiteController::class, "live"]);
 
 # User authentication
 $app->router->get("/login", [AuthController::class, "login"]);

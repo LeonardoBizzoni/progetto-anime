@@ -18,7 +18,7 @@
             <div class="collapse navbar-collapse" id="navbarNav" style="display: flex;">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link" href="/contact">Contact</a>
+                        <a class="nav-link" href="/live">Live</a>
                     </li>
                 </ul>
 

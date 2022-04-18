@@ -3,6 +3,7 @@ namespace app\controllers;
 
 use app\core\BaseController;
 use app\core\Request;
+use app\models\Vtubers;
 
 class SiteController extends BaseController {
     public function home() {
@@ -13,16 +14,18 @@ class SiteController extends BaseController {
         return $this->render("home", $params);
     }
 
-    public function contact() {
-        return $this->render("contact");
-    }
+    public function live(Request $req) {
+        $errors = [];
+        $vtuberModel = new Vtubers;
 
-    public function handleContact(Request $req) {
-        $body = $req->getBody();
+        if ($req->getMethod() == "post") {
+            $vtuberModel->loadData($req->getBody());
+            $vtuberModel->getVtuberName();
 
-        # $body validation
-
-        return "Handling submitted data";
+            if ($vtuberModel->validate() && $vtuberModel->register()) {
+                return "Success";
+            }
+        }
+        return $this->render("live", [ "model" => $vtuberModel ]);
     }
 }
-?>
