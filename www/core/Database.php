@@ -71,11 +71,12 @@ CREATE TABLE IF NOT EXISTS migrations (
 
     public function saveMigration(array $migrations)
     {
-        $str = implode(",", array_map(fn($m) => "('$m')", $migrations));
+        $str = implode(",", array_map(fn ($m) => "('$m')", $migrations));
         $this->pdo->prepare("INSERT INTO migrations(migration) VALUES $str")->execute();
     }
 
-    protected function log(string $message) {
-        echo "[".date("Y/m/d H:m:s")."] - $message".PHP_EOL;
+    protected function log(string $message)
+    {
+        echo "[" . date("Y/m/d H:m:s") . "] - $message" . PHP_EOL;
     }
 }

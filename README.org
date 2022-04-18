@@ -210,18 +210,33 @@ if ($ruleName == self::RULE_MATCH && $value != $this->{$rule["match"]}) {
 #+end_src
 
 *** Database class
-Utilizza PDO per effettuare la connessione al server mariadb in esecuzione nel docker container.
+Il compito della Database class è quello di effettuare una connessione al server mariadb in esecuzione sul docker container ed applicare delle [[./www/Migrations][migration]].
 Sia le credenziali di accesso al database che il domain service name (DSN) sono salvate nel file "www/.env" (vedi [[./www/.env.example][.env.example]]) e per leggerle si utilizza il package [[https://github.com/vlucas/phpdotenv][phpdotenv]].
 
-Installazione:
+Installazione phpdotenv:
 #+begin_src bash
 cd www
 composer require vlucas/phpdotenv
 #+end_src
 
+Attraverso il metodo "applyMigrations()" la Database class è in grado di:
+- creare la migration table se non esiste nel DB
+- selezionare le migration presenti nella migration table
+- per ogni migration non presente nel DB, creare un'istanza ed esegue il metodo "up()"
+
 ** Migrations
-Contengono i cambiamenti efftuati in ordine sul database.
-/Formato migration: touch "m_$(date +%s)_name.php"/
+
+È importante che le migration class siano ordinate e che seguano tutte lo stesso stile di nomeclatura.
+La creazione di una migration class può essere effettuata tramite lo script [[./scripts/createMigration.sh][createMigration]].
+#+begin_src bash
+./scripts/createMigration pathToMigrationsDir migrationName
+#+end_src
+
+Queste classi vengono istanziate dalla core class *Database* attraverso il metodo "applyMigrations()".
+
+Ogni migration class è formata da _almeno_ 2 metodi:
+- "up()": esegue del codice SQL per effettuare una modifica al DB
+- "down()": esegue del codice SQL per annullare la modifica
 
 ** Models
 Le classi "Model" gestiscono i dati presenti nel database e controlla che i dati seguano delle determinate regole.
