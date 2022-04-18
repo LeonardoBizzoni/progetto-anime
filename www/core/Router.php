@@ -32,17 +32,19 @@ class Router
         $method = $this->req->getMethod();
         $callback = $this->routes[$method][$path] ?? false;
 
-        if (is_string($callback)) {
+        if (is_callable($callback)) {
+            return call_user_func($callback);
+        } else if (is_string($callback)) {
             return $this->renderView($callback);
         } else if (is_array($callback)) {
             Application::$app->setController(new $callback[0]);
             $callback[0] = Application::$app->getController();
+
+            return call_user_func($callback, $this->req);
         } else {
             $this->res->setStatusCode(404);
             return $this->renderView("404");
         }
-
-        return call_user_func($callback, $this->req);
     }
 
     public function renderView(string $view, array $params = [])
@@ -53,22 +55,23 @@ class Router
         return str_replace("{{content}}", $viewContent, $layoutContent);
     }
 
-    private function loadLayoutContent() {
+    private function loadLayoutContent()
+    {
         $layout = Application::$app->getController()->layout;
         ob_start();
-        include_once Application::$ROOT_DIR."/views/layouts/$layout.php";
+        include_once Application::$ROOT_DIR . "/views/layouts/$layout.php";
         return ob_get_clean();
     }
 
-    private function loadViewContent(string $view, array $params) {
+    private function loadViewContent(string $view, array $params)
+    {
         # modo epico per creare variabili con lo stesso nome assegnato nell'array!!
         foreach ($params as $key => $value) {
             $$key = $value;
         }
 
         ob_start();
-        include_once Application::$ROOT_DIR."/views/$view.php";
+        include_once Application::$ROOT_DIR . "/views/$view.php";
         return ob_get_clean();
     }
 }
-?>

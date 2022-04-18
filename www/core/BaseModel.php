@@ -63,7 +63,6 @@ abstract class BaseModel {
             }
         }
 
-        echo " <script>alert('validate fatto!')</script>";
         return empty($this->errors);
     }
 

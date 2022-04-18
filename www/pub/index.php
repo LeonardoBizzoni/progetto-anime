@@ -12,6 +12,10 @@ $config = [
         "dsn" => $_ENV["DB_DSN"],
         "user" => $_ENV["DB_USER"],
         "password" => $_ENV["DB_PASSWORD"]
+    ],
+    "twitch" => [
+        "clientid" => $_ENV["TWITCH_CLIENTID"],
+        "token" => $_ENV["TWITCH_TOKEN"]
     ]
 ];
 
@@ -30,4 +34,3 @@ $app->router->get("/register", [AuthController::class, "register"]);
 $app->router->post("/register", [AuthController::class, "register"]);
 
 $app->run();
-?>

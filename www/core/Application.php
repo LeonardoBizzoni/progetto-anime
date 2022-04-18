@@ -8,6 +8,7 @@ class Application {
     public Request $req;
     public Response $res;
     public Database $db;
+    public array $config;
 
     public static Application $app;
     public static string $ROOT_DIR;
@@ -16,6 +17,7 @@ class Application {
         self::$ROOT_DIR = $root;
         self::$app = $this;
 
+        $this->config = $config;
         $this->req = new Request();
         $this->res = new Response();
         $this->router = new Router($this->req, $this->res);
