@@ -5,6 +5,7 @@ RUN apk update && apk add --no-cache \
     php8 \
     php8-fpm \
     php8-mysqli \
+    php8-pdo \
     nginx
 
 RUN docker-php-ext-install pdo pdo_mysql mysqli

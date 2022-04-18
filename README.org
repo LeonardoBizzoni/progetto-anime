@@ -11,6 +11,7 @@
 - [[#realizzazione][Realizzazione]]
   - [[#entry-point---indexphp][Entry point - index.php]]
   - [[#core][Core]]
+  - [[#migrations][Migrations]]
   - [[#models][Models]]
   - [[#controllers][Controllers]]
 
@@ -207,6 +208,20 @@ if ($ruleName == self::RULE_MATCH && $value != $this->{$rule["match"]}) {
     $this->addError($attribute, self::RULE_MATCH, $rule);
 }
 #+end_src
+
+*** Database class
+Utilizza PDO per effettuare la connessione al server mariadb in esecuzione nel docker container.
+Sia le credenziali di accesso al database che il domain service name (DSN) sono salvate nel file "www/.env" (vedi [[./www/.env.example][.env.example]]) e per leggerle si utilizza il package [[https://github.com/vlucas/phpdotenv][phpdotenv]].
+
+Installazione:
+#+begin_src bash
+cd www
+composer require vlucas/phpdotenv
+#+end_src
+
+** Migrations
+Contengono i cambiamenti efftuati in ordine sul database.
+/Formato migration: touch "m_$(date +%s)_name.php"/
 
 ** Models
 Le classi "Model" gestiscono i dati presenti nel database e controlla che i dati seguano delle determinate regole.
