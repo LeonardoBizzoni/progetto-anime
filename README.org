@@ -88,6 +88,11 @@ Per gestire le dipendenze e namespaces di PHP viene utilizzato *composer*.
 ** Entry point - index.php
 La home page, si occupa di inizializzare l'applicazione ed impostare le route con annesso array [Controller, metodo].
 
+#+begin_src php
+$app = new Application(dirname(__DIR__));
+$app->router->get("/", [SiteController::class, "home"]);
+#+end_src
+
 ** Core
 *** Main application class
 La classe principale, si occupa di istanziare:
@@ -106,9 +111,17 @@ Una delle classi principali è il Router, gestisce l'array associativo "$routes"
 L'array associativo "$routes" è diviso in 2 grandi sottogruppi:
 - sottogruppo "get"
 - sottogruppo "post"
+#+begin_src php
+public function get($path, $callback) {
+    $this->routes["get"][$path] = $callback;
+}
+
+public function post($path, $callback) {
+    $this->routes["post"][$path] = $callback;
+}
+#+end_src
 
 Ogni sottogruppo a sua volta è formato da 2 campi: "path" => "method".
-
 #+begin_example
 {
     ["get"] => {
@@ -131,6 +144,24 @@ Metodi:
   + "loadLayoutContent()": restituisce il contenuto del layout selezionato dal controller della specifica view
   + "loadViewContent()": restituisce il contenuto della specifica view
 
+Per leggere il contenuto della view e del layout si utilizza la funzione "ob_start()" che attiva l'output buffering, invece di inviare l'output all'utente richiedente esso viene salvato in un buffer interno.
+I dati salvati nel buffer possono venire recuperati tramite la funzione "ob_get_clean()" che a sua volta esegue "ob_get_contents()", per convertire i dati contenuti nel buffer in string, e "ob_end_clean()" per cancellare il buffer.
+#+begin_src php
+# loadViewContent() snippet
+ob_start();
+include_once Application::$ROOT_DIR."/views/$view.php";
+return ob_get_clean();
+#+end_src
+
+Una volta prelevati i contenuti del layout e della view, si effettua una semplice str_replace per ottenere la view finale da poter mostrare all'utente.
+#+begin_src php
+# renderView() snippet
+$layoutContent = $this->loadLayoutContent();
+$viewContent = $this->loadViewContent($view, $params);
+
+return str_replace("{{content}}", $viewContent, $layoutContent);
+#+end_src
+
 *** Request class
 Una classe helper, analizza le requests e restituisce l'informazione necessaria al richiedente.
 
@@ -148,6 +179,34 @@ Tutti i model si basano su questa classe, facilmente permettendo:
 - notificazione della presenza di errori all'utente tramite i metodi:
   + "addError()"
   + "errorMessage()"
+
+La verifica della validità di un dato viene effettuata attraverso l'iterazione dell'array associtivo restituito dal metodo astratto "rules()".
+#+begin_example
+[
+    "attributo0" => [self::RULE_REQUIRED],
+    "attributo1" => [self::RULE_REQUIRED, [ self::RULE_MIN, "min" => 20 ], [ self::RULE_MAX, "max" => 100 ]],
+]
+#+end_example
+
+Per ogni "attributo => regole" e per ogni regola (un attributo può avere più regole) verifica quale controllo eseguire ed aggiunge un messaggio di errore in caso di fallimento del controllo.
+#+begin_src php
+# BaseModel::validate() snippet
+if ($ruleName == self::RULE_REQUIRED && !$value) {
+    $this->addError($attribute, self::RULE_REQUIRED);
+}
+if ($ruleName == self::RULE_EMAIL && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
+    $this->addError($attribute, self::RULE_EMAIL);
+}
+if ($ruleName == self::RULE_MIN && strlen($value) < $rule["min"]) {
+    $this->addError($attribute, self::RULE_MIN, $rule);
+}
+if ($ruleName == self::RULE_MAX && strlen($value) > $rule["max"]) {
+    $this->addError($attribute, self::RULE_MAX, $rule);
+}
+if ($ruleName == self::RULE_MATCH && $value != $this->{$rule["match"]}) {
+    $this->addError($attribute, self::RULE_MATCH, $rule);
+}
+#+end_src
 
 ** Models
 Le classi "Model" gestiscono i dati presenti nel database e controlla che i dati seguano delle determinate regole.
