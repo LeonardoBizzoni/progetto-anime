@@ -224,6 +224,9 @@ Attraverso il metodo "applyMigrations()" la Database class è in grado di:
 - selezionare le migration presenti nella migration table
 - per ogni migration non presente nel DB, creare un'istanza ed esegue il metodo "up()"
 
+*** Database model class
+La classe DbModel si basa sulla base Database class ma viene trattata come l'effettiva SQL table.
+
 ** Migrations
 
 È importante che le migration class siano ordinate e che seguano tutte lo stesso stile di nomeclatura.

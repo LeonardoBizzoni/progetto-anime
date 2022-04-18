@@ -11,7 +11,6 @@ class m_1650263661_Initial {
                 email VARCHAR(255) NOT NULL,
                 firstname VARCHAR(255) NOT NULL,
                 lastname VARCHAR(255) NOT NULL,
-                status TINYINT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
               ) ENGINE=INNODB;";
 

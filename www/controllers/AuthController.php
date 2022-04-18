@@ -3,7 +3,7 @@ namespace app\controllers;
 
 use app\core\BaseController;
 use app\core\Request;
-use app\models\RegisterModel;
+use app\models\User;
 
 class AuthController extends BaseController{
     public function login() {
@@ -14,7 +14,7 @@ class AuthController extends BaseController{
     public function register(Request $req) {
         // $this->setLayout("auth");
         $errors = [];
-        $registerModel = new RegisterModel;
+        $registerModel = new User;
 
         if ($req->getMethod() == "post") {
             $registerModel->loadData($req->getBody());

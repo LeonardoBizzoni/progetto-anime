@@ -47,6 +47,19 @@ abstract class BaseModel {
                 if ($ruleName == self::RULE_MATCH && $value != $this->{$rule["match"]}) {
                     $this->addError($attribute, self::RULE_MATCH, $rule);
                 }
+                if ($ruleName == self::RULE_UNIQUE) {
+                    $className = $rule["class"];
+                    $uniqueAttr = $rule["attribute"] ?? $attribute;
+                    $tableName = $className::tableName();
+
+                    $statement = Application::$app->db->pdo->prepare("select * from $tableName where $uniqueAttr = :attr");
+                    $statement->bindValue(":attr", $value);
+                    $statement->execute();
+
+                    if($statement->fetchObject()) {
+                        $this->addError($attribute, self::RULE_UNIQUE, ["field" => $attribute]);
+                    }
+                }
             }
         }
 
@@ -68,6 +81,7 @@ abstract class BaseModel {
             self::RULE_MIN => "Min length of this field must be {min}",
             self::RULE_MAX => "Max length of this field must be {max}",
             self::RULE_MATCH => "This field must be the same as {match}",
+            self::RULE_UNIQUE => "Record with this {field} already exist"
         ];
     }
 

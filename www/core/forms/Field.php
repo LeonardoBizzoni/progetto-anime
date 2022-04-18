@@ -13,7 +13,7 @@ class Field {
 
     public function __construct(BaseModel $model, string $attribute) {
         $this->model = $model;
-        $this->attribute = $attribute;
+        $this->attribute = strtolower($attribute);
         $this->type = self::TYPE_TEXT;
     }
 
@@ -26,7 +26,7 @@ class Field {
     <input name="%s" type="%s" value="%s" class="form-control%s"/>
     <div class="invalid-feedback">%s</div>
 </div>',
-            $this->attribute,
+            ucfirst($this->attribute),
             $this->attribute,
             $this->type,
             $this->model->{$this->attribute},
