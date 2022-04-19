@@ -4,6 +4,8 @@ namespace app\models;
 
 use app\core\Application;
 use app\core\DbModel;
+use Google_Client;
+use Google_Service_YouTube;
 
 class Vtubers extends DbModel
 {
@@ -39,10 +41,10 @@ class Vtubers extends DbModel
 
     public function getVtuberName()
     {
-        $clientID = Application::$app->config["twitch"]["clientid"] ?? "";
-        $token = Application::$app->config["twitch"]["token"] ?? "";
-
         if (str_contains($this->link, "twitch.tv")) {
+            $clientID = Application::$app->config["twitch"]["clientid"] ?? "";
+            $token = Application::$app->config["twitch"]["token"] ?? "";
+
             $idol = str_replace("https://www.twitch.tv/", "", $this->link);
             $url = "https://api.twitch.tv/helix/users?login=$idol";
 
@@ -57,12 +59,61 @@ class Vtubers extends DbModel
             $result = get_object_vars($result["data"][0]);
 
             $this->username = ucfirst($result["display_name"]);
-            $this->login= $result["login"];
+            $this->login = $result["login"];
             $this->img = rtrim($result["profile_image_url"], "/ ");
+            return;
+        }
+        if (str_contains($this->link, "youtube.com")) {
+            $client = new Google_Client();
+            $client->setDeveloperKey(Application::$app->config["yt"]["key"]);
+            $service = new Google_Service_YouTube($client);
+
+            $id = str_replace("https://www.youtube.com/channel/", "", $this->link);
+            $response = get_object_vars($service->channels->listChannels('snippet', ["id" => $id]));
+
+            $this->username = $response["items"][0]["snippet"]["title"];
+            $this->login = $id;
+            $this->img = $response["items"][0]["snippet"]["thumbnails"]["default"]["url"];
             return;
         }
         $this->username = "i got you bro";
         $this->login = "i got you bro";
         $this->img = "i got you bro";
+    }
+
+    public function isLive(string $login, string $link)
+    {
+        if (str_contains($link, "twitch.tv")) {
+            $clientID = Application::$app->config["twitch"]["clientid"] ?? "";
+            $token = Application::$app->config["twitch"]["token"] ?? "";
+
+            $url = "https://api.twitch.tv/helix/streams?user_login=$login";
+
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array("Client-ID: $clientID", "Authorization: Bearer $token"));
+
+            $result = get_object_vars(json_decode(curl_exec($ch)));
+            curl_close($ch);
+
+            return count($result["data"]) ? $result["data"] : [];
+        }
+
+        if (str_contains($link, "youtube.com")) {
+            $clientID = Application::$app->config["yt"]["key"] ?? "";
+
+            $url = "https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=$login&eventType=live&type=video&key=$clientID";
+
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+            $result = get_object_vars(json_decode(curl_exec($ch)));
+            curl_close($ch);
+
+            return count($result["items"]) ? $result["items"] : [];
+        }
+
     }
 }

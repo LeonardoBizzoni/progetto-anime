@@ -16,6 +16,9 @@ $config = [
     "twitch" => [
         "clientid" => $_ENV["TWITCH_CLIENTID"],
         "token" => $_ENV["TWITCH_TOKEN"]
+    ],
+    "yt" => [
+        "key" => $_ENV["GOOGLE_API_KEY"]
     ]
 ];
 

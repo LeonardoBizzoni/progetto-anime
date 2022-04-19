@@ -20,7 +20,6 @@ class SiteController extends BaseController
 
     public function live(Request $req)
     {
-        $errors = [];
         $params = [];
         $vtuberModel = new Vtubers;
 
@@ -35,7 +34,12 @@ class SiteController extends BaseController
             $statement = Application::$app->db->pdo->prepare("SELECT * FROM vtubers;");
             $statement->execute();
 
-            $params = $statement->fetchAll();
+            foreach ($statement->fetchAll() as $vtuber) {
+                $params[] = ["vtuber" => [ $vtuber, $vtuberModel->isLive($vtuber["login"], $vtuber["link"]) ]];
+            }
+                // echo "<pre>";
+                // var_dump($params);
+                // echo "</pre";
         }
 
         if (isset($_GET["id"]))
