@@ -4,6 +4,7 @@ namespace app\models;
 
 use app\core\Application;
 use app\core\DbModel;
+use DOMDocument;
 use Google_Client;
 use Google_Service_YouTube;
 
@@ -101,19 +102,28 @@ class Vtubers extends DbModel
         }
 
         if (str_contains($link, "youtube.com")) {
-            $clientID = Application::$app->config["yt"]["key"] ?? "";
-
-            $url = "https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=$login&eventType=live&type=video&key=$clientID";
+            $url = "https://www.youtube.com/channel/$login/live";
 
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
-            $result = get_object_vars(json_decode(curl_exec($ch)));
+            $result = curl_exec($ch);
             curl_close($ch);
 
-            return count($result["items"]) ? $result["items"] : [];
-        }
+            $doc = new DOMDocument();
+            libxml_use_internal_errors(true);
+            $doc->loadHTML($result);
+            $length = $doc->getElementsByTagName('link')->length;
 
+            for ($i = 0; $i < $length; $i++) {
+                $result = $doc->getElementsByTagName("link")->item($i)->getAttribute("href");
+                if (str_contains($result, "https://www.youtube.com/watch?v=")) {
+                    return [str_replace( "https://www.youtube.com/watch?v=", "",  $result)];
+                }
+            }
+
+            return [];
+        }
     }
 }

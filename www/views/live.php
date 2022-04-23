@@ -41,7 +41,7 @@ if (!isset($_GET["id"])) {
             if (str_contains($vtuber["vtuber"][0]["link"], "twitch.tv")) {
                 echo "<iframe src=\"https://player.twitch.tv/?channel=".$vtuber["vtuber"][0]["login"]."&parent=localhost\" frameborder=\"0\" allowfullscreen=\"true\" scrolling=\"no\"></iframe>";
             } else {
-                echo "<iframe src=\"https://www.youtube.com/embed/".$vtuber["vtuber"][1][0]->id->videoId."\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\" allowfullscreen></iframe>";
+                echo "<iframe src=\"https://www.youtube.com/embed/".$vtuber["vtuber"][1][0]."\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\" allowfullscreen></iframe>";
             }
 
             echo "</div></div>";
