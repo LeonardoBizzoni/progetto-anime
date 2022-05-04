@@ -15,14 +15,26 @@ class Vtubers extends DbModel
     public string $img = "";
     public string $link = "";
 
-    public function tableName(): string
+    public static function tableName(): string
     {
         return "vtubers";
+    }
+
+    public static function primaryKey(): string
+    {
+        return "id";
     }
 
     public function attributes(): array
     {
         return ["username", "login", "img", "link"];
+    }
+
+    public function labels(): array
+    {
+        return [
+            "link" => "Vtuber channel link",
+        ];
     }
 
     public function register()
@@ -40,7 +52,7 @@ class Vtubers extends DbModel
         ];
     }
 
-    public function getVtuberName()
+    public function getVtuberInfo()
     {
         if (str_contains($this->link, "twitch.tv")) {
             $clientID = Application::$app->config["twitch"]["clientid"] ?? "";
@@ -77,53 +89,54 @@ class Vtubers extends DbModel
             $this->img = $response["items"][0]["snippet"]["thumbnails"]["default"]["url"];
             return;
         }
-        $this->username = "i got you bro";
-        $this->login = "i got you bro";
-        $this->img = "i got you bro";
     }
 
     public function isLive(string $login, string $link)
     {
-        if (str_contains($link, "twitch.tv")) {
-            $clientID = Application::$app->config["twitch"]["clientid"] ?? "";
-            $token = Application::$app->config["twitch"]["token"] ?? "";
+        // if (str_contains($link, "twitch.tv")) {
+        //     $clientID = Application::$app->config["twitch"]["clientid"] ?? "";
+        //     $token = Application::$app->config["twitch"]["token"] ?? "";
 
-            $url = "https://api.twitch.tv/helix/streams?user_login=$login";
+        //     $url = "https://api.twitch.tv/helix/streams?user_login=$login";
 
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array("Client-ID: $clientID", "Authorization: Bearer $token"));
+        //     $ch = curl_init($url);
+        //     curl_setopt($ch, CURLOPT_URL, $url);
+        //     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        //     curl_setopt($ch, CURLOPT_HTTPHEADER, array("Client-ID: $clientID", "Authorization: Bearer $token"));
 
-            $result = get_object_vars(json_decode(curl_exec($ch)));
-            curl_close($ch);
+        //     $result = get_object_vars(json_decode(curl_exec($ch)));
+        //     curl_close($ch);
 
-            return count($result["data"]) ? $result["data"] : [];
-        }
+        //     return count($result["data"]) ? $result["data"] : [];
+        // }
 
-        if (str_contains($link, "youtube.com")) {
-            $url = "https://www.youtube.com/channel/$login/live";
+        // if (str_contains($link, "youtube.com")) {
+        //     $url = "https://www.youtube.com/channel/$login/live";
 
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        //     $ch = curl_init($url);
+        //     curl_setopt($ch, CURLOPT_URL, $url);
+        //     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
-            $result = curl_exec($ch);
-            curl_close($ch);
+        //     $result = curl_exec($ch);
+        //     curl_close($ch);
 
-            $doc = new DOMDocument();
-            libxml_use_internal_errors(true);
-            $doc->loadHTML($result);
-            $length = $doc->getElementsByTagName('link')->length;
+        //     $doc = new DOMDocument();
+        //     libxml_use_internal_errors(true);
+        //     $doc->loadHTML($result);
 
-            for ($i = 0; $i < $length; $i++) {
-                $result = $doc->getElementsByTagName("link")->item($i)->getAttribute("href");
-                if (str_contains($result, "https://www.youtube.com/watch?v=")) {
-                    return [str_replace( "https://www.youtube.com/watch?v=", "",  $result)];
-                }
-            }
+        //     $result = $doc->getElementsByTagName("link");
+        //     $length = $result->length;
 
-            return [];
-        }
+        //     for ($i = 0; $i < $length; $i++) {
+        //         $tag = $result->item($i)->getAttribute("href");
+        //         if (str_contains($tag, "https://www.youtube.com/watch?v=")) {
+        //             return [str_replace("https://www.youtube.com/watch?v=", "",  $tag)];
+        //         }
+        //     }
+
+        //     unset($doc);
+        // }
+
+        return [];
     }
 }

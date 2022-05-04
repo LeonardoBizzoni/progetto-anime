@@ -13,9 +13,14 @@ class User extends DbModel
     public string $password = "";
     public string $confirm = "";
 
-    public function tableName(): string
+    public static function tableName(): string
     {
         return "users";
+    }
+
+    public static function primaryKey(): string
+    {
+        return "id";
     }
 
     public function attributes(): array {
@@ -35,8 +40,20 @@ class User extends DbModel
             "lastname" => [self::RULE_REQUIRED],
             "username" => [self::RULE_REQUIRED],
             "email" => [self::RULE_REQUIRED, self::RULE_EMAIL, [self::RULE_UNIQUE, "class" => self::class ]],
-            "password" => [self::RULE_REQUIRED, [self::RULE_MIN, "min" => 20], [self::RULE_MAX, "max" => 100]],
+            "password" => [self::RULE_REQUIRED, [self::RULE_MIN, "min" => 1], [self::RULE_MAX, "max" => 100]],
             "confirm" => [self::RULE_REQUIRED, [self::RULE_MATCH, "match" => "password"]]
+        ];
+    }
+
+    public function labels(): array
+    {
+        return [
+            "firstname" => "First name",
+            "lastname" => "Last name",
+            "username" => "Your username",
+            "email" => "Email",
+            "password" => "Your super secret password",
+            "confirm" => "Confirm your super secret password",
         ];
     }
 }

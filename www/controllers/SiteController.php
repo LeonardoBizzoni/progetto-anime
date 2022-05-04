@@ -21,29 +21,28 @@ class SiteController extends BaseController
     public function live(Request $req)
     {
         $params = [];
+        $statement = Application::$app->db->pdo->prepare("SELECT * FROM vtubers;");
         $vtuberModel = new Vtubers;
 
         if ($req->getMethod() == "post") {
             $vtuberModel->loadData($req->getBody());
-            $vtuberModel->getVtuberName();
+            $vtuberModel->getVtuberInfo();
 
             if ($vtuberModel->validate() && $vtuberModel->register()) {
-                return "Success";
+                Application::$app->res->redirect("/");
             }
         } else if ($req->getMethod() == "get") {
-            $statement = Application::$app->db->pdo->prepare("SELECT * FROM vtubers;");
+            if (isset($_GET["id"])) {
+                $this->setLayout("live");
+                $statement = Application::$app->db->pdo->prepare("SELECT * from vtubers where id={$_GET['id']}");
+            }
             $statement->execute();
 
             foreach ($statement->fetchAll() as $vtuber) {
-                $params[] = ["vtuber" => [ $vtuber, $vtuberModel->isLive($vtuber["login"], $vtuber["link"]) ]];
+                $params[] = [ $vtuber, $vtuberModel->isLive($vtuber["login"], $vtuber["link"]) ];
             }
-                // echo "<pre>";
-                // var_dump($params);
-                // echo "</pre";
         }
 
-        if (isset($_GET["id"]))
-            $this->setLayout("live");
         return $this->render("live", ["model" => $vtuberModel, $params]);
     }
 }

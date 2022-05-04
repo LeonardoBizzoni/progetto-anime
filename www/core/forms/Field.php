@@ -26,7 +26,7 @@ class Field {
     <input name="%s" type="%s" value="%s" class="form-control%s"/>
     <div class="invalid-feedback">%s</div>
 </div>',
-            ucfirst($this->attribute),
+            $this->model->getLabel($this->attribute),
             $this->attribute,
             $this->type,
             $this->model->{$this->attribute},

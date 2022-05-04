@@ -243,15 +243,30 @@ Ogni migration class è formata da _almeno_ 2 metodi:
 
 ** Models
 Le classi "Model" gestiscono i dati presenti nel database e controlla che i dati seguano delle determinate regole.
-Tutte le classi Model derivano dalla classe "BaseModel".
+Tutte le classi Model derivano dalla classe "BaseModel" o "DbModel".
 
-*** Registration model
+*** Registration model - User model
 Il model di registrazione si occupa della gestione dei dati di nuovi utenti e dell'interazione con il database.
 
 Attraverso l'implementazione del metodo astratto "rules()" si possono impostare le regole che i campi della form dovranno seguire.
-*Attenzione*: i nomi dei parametri, i nomi inseriti nella array resistituito da "rules()" ed i nomi dei [[./www/core/forms/Field.php][Field]] _devono_ essere uguali.
 
-# TODO: register()
+I nomi dei parametri di questa classe non devono necessariamente coincidere con i label visibili dall'utente.
+Questo perchè utilizzando il metodo "labels()" è possibile mappare i nomi dei parametri ai label che appaiono all'utente.
+
+L'effettiva registrazione dell'utente attraverso l'inserimento dei valori all'interno del database viene eseguita dal metodo "save()".
+"save()" è un metodo a cui tutti i model che estendono "DbModel" possono accedere, questo perchè sono la rappresentazione della tabella presente nel database.
+
+*** Login model - LoginForm model
+Model molto semplice, non basato sul DbModel ma bensì sul BaseModel in quanto non deve interagire direttamente con il database.
+
+Inviata la POST request per effettuare il login esso cerca nel database un utente che abbia l'indirizzo email fornito dall'utente, se lo trova controlla la correttezza della password.
+
+*** Vtuber model
+Model utilizzato per interagire con il database di vtuber.
+
+Simile al model di registrazione ma con 2 importanti metodi:
+- *getVtuberInfo()*: controlla che il link inserito sia l'URL ad un canale twitch o youtube ed utilizzando i rispettivi API(Twitch o Google) recupara le informazioni della vtuber in questione
+- *isLive()*: controlla se la vtuber in questione è live o no, utilizzando l'API Twitch o tramite curl request per canali YT
 
 ** Controllers
 Le classi "Controller" svolgono il ruolo di ponte.
@@ -261,4 +276,3 @@ Esse permettono ai dati di apparire nella View richiesta dall'utente una volta p
 L'authentication controller ha 2 compiti fondamentali:
 - registrare nuovi utenti con l'aiuto della classe "RegisterModel"
 - permettere l'accesso ad utenti già registrati
-# TODO
