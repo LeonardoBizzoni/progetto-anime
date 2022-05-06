@@ -64,13 +64,17 @@ Se l'idol non è attualmente live viene mostrata una pagina che notifica l'utent
 
 * Setup
 ** Configurazione ed installazione server
-*** Server web - Nginx
+*** Presentation Layer - Nginx
 Ho deciso di utilizzare Nginx come web server per le performance nettamente migliori e leggerezza in confronto ad altri web server.
+Inoltre la configura di Nginx è molto più semplice di web server come Apache.
 
-L'installazione viene effettuata tramite un docker container e la seguente [[./dockerfiles/web/Dockerfile][container image]].
-Nginx utilizza il seguente [[./dockerfiles/web/nginx.conf][file di configurazione]].
+/Soluzioni microsoft come il web server IIS non sono state considerate per via delle license sotto cui sono pubblicate ed a causa del mio odio verso i loro prodotti./
 
-*** Server database - MariaDB
+Per maggiori spiegazioni sulla container image e la configurazione di nginx recarsi [[./dockerfiles/web/README.org][qui]].
+
+*** Business Logic Layer - PHP
+
+*** Data Layer - MariaDB
 L'installazione del database server mariadb viene anch'essa eseguita tramite un docker container e la container image disponibile su [[https://hub.docker.com/_/mariadb][hub.docker]] per cui non ha bisogno di alcuna configurazione.
 
 ** Esecuzione server
