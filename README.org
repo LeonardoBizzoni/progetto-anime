@@ -2,37 +2,28 @@
 
 * Tabella dei contenuti :TOC:
 - [[#descrizione-del-progetto][Descrizione del progetto]]
-  - [[#home-page][Home page]]
-  - [[#popolazione-del-database][Popolazione del database]]
-  - [[#pagine-vtuber][Pagine VTuber]]
+  - [[#idea-home-page][IDEA Home page]]
+  - [[#idea-popolazione-del-database][IDEA Popolazione del database]]
+  - [[#live-page][Live page]]
 - [[#setup][Setup]]
   - [[#configurazione-ed-installazione-server][Configurazione ed installazione server]]
-  - [[#esecuzione-server][Esecuzione server]]
-- [[#realizzazione][Realizzazione]]
-  - [[#entry-point---indexphp][Entry point - index.php]]
-  - [[#core][Core]]
-  - [[#migrations][Migrations]]
-  - [[#models][Models]]
-  - [[#controllers][Controllers]]
 
 * Descrizione del progetto
-Su [questo-sito] è possibile registrare un account con cui si può tenere traccia di:
+Attraverso la web app è possibile registrare un account con cui è possibile tenere traccia di:
 - Anime visti
-- Manga letti
+- Manga/light novel lette
 - Visual novel giocate
-- Light novel lette
 
-Inoltre è possibile realizzare una lista di VTuber preferite, seguire le loro live e ricevere notifiche via e-mail quando sono in live.
+Inoltre attravero la pagina "live" è possibile visualizzare quali vtuber sono attualmente live e partecipare ad una di esse senza doversi recare sul sito di streaming da loro adottato.
+Gli utenti registrati possono anche aggiungere una vtuber alla loro lista personale di vtuber preferite e ricevere una notifica via email quando una di esse va in onda.
 
-** Home page
-Nella home page è possibile vedere una lista delle ultime uscite divise per categoria [anime, manga, LN, VN] e per genere [azione, horror, sportivo, sci-fi, ...].
+Un utente può anche richiedere l'aggiunta di una vtuber al catalogo della web app, qualora essa non ne faccia già parte, semplicemente inviando, tramite l'apposito form, l'URL al canale della vtuber, sia esso su [[twitch.tv/][twitch]] o [[youtube.com/][youtube]].
 
-** Popolazione del database
-Sarà compito dell'utente registrato creare un nuovo record per aggiungere una serie di una specifica categoria al database.
-Una volta creato il record, chiunque altro sia registrato è in grado di apportare modifiche.
-Questo processo lo effettua attraverso una pagina di registrazione, dove l'utente dovrà inserire:
+** IDEA Home page
+Nella home page è possibile visualizzare una lista delle ultime uscite, divise per categoria [anime, manga, LN, VN] e per genere [azione, horror, sportivo, sci-fi, ...].
 
-*** ... per gli anime
+** IDEA Popolazione del database
+*** Anime
 - Titolo
 - Tipo di anime [film, serie TV, speciale]
 - Stato pubblicazione
@@ -42,7 +33,7 @@ Questo processo lo effettua attraverso una pagina di registrazione, dove l'utent
 - Generi
 - Immagine di copertina
 
-*** ... per manga e light novel
+*** Manga e Light novels
 - Titolo
 - Stato pubblicazione
   + Numero di capitoli e volumi se lo stato è *concluso*
@@ -51,232 +42,36 @@ Questo processo lo effettua attraverso una pagina di registrazione, dove l'utent
 - Generi
 - Immagine di copertina
 
-*** ... per visual novel
+*** Visual novels
 - Titolo
 - Link del seller
 - Trama
 - Generi
 - Immagine di copertina
 
-** Pagine VTuber
-Speciale pagina da cui poter partecipare alla stream della particolare VTuber direttamente, senza bisogno di recarsi sulla pagina YouTube/Twitch dell'idol in questione.
-Se l'idol non è attualmente live viene mostrata una pagina che notifica l'utente che lo stream è offline.
+** TODO Live page
+Attraverso la pagina "live" è possibile partecipare alla stream di una vtuber direttamente senza recarsi sul sito di streaming da loro utilizzato.
+Nonappena si visita quasta pagina vengono visualizzate 3 liste:
+- *Preferite*: lista dedicata alle vtuber preferite dell'utente attualmente in live
+- *In live*: lista di tutte le vtuber presenti nel catalogo attualmente in onda
+- *Offline*: lista delle vtuber presenti nel catalogo attualmente non in onda
 
-* Setup
+L'aggiunta di una vtuber viene effettuata tramite l'apposito form visibile agli utenti registrati tramite il tasto "Add vtuber".
+Una volta cliccato verrà chiesto all'utente l'inserimento dell'URL del canale della vtuber che desidera venga aggiunta al catalogo.
+/In qualche modo dovrei tipo controllare che non venga mandata merda, pensavo tipo mi manda una mail quando un utente vuole aggiungere roba ed aspetta una mia risposta prima di aggiungere, però boh troppo sbatti da parte mia./
+/Un'altra roba epica da fare è tipo spostare il controllo se una vtuber è live ad uno script epico in esecuzione sul server separato dal webserver così da rendere la visualizzazione della pagina più rapida visto che ora per renderla un minimo più rapida utilizzo la cache della pagina. Si la pagina è lenta in culo ora./
+
+* DONE Setup
 ** Configurazione ed installazione server
+/Architettua a 3 livelli./
+
 *** Presentation Layer - Nginx
 Ho deciso di utilizzare Nginx come web server per le performance nettamente migliori e leggerezza in confronto ad altri web server.
 Inoltre la configura di Nginx è molto più semplice di web server come Apache.
 
 /Soluzioni microsoft come il web server IIS non sono state considerate per via delle license sotto cui sono pubblicate ed a causa del mio odio verso i loro prodotti./
 
-Per maggiori spiegazioni sulla container image e la configurazione di nginx recarsi [[./dockerfiles/web/README.org][qui]].
-
 *** Business Logic Layer - PHP
 
 *** Data Layer - MariaDB
 L'installazione del database server mariadb viene anch'essa eseguita tramite un docker container e la container image disponibile su [[https://hub.docker.com/_/mariadb][hub.docker]] per cui non ha bisogno di alcuna configurazione.
-
-** Esecuzione server
-Eseguire i seguenti comandi a riga di comando per creare e avviare i container:
-#+begin_src sh
-docker build -t nomeContainerImage dockerfiles/web
-docker run -dp 80:80 -v "$PWD/www":/var/www/html nomeContainerImage
-
-docker run -dp 3306:3306 -v "$PWD/DBfiles":/var/lib/mysql -e MARIADB_ROOT_PASSWORD=root --name animedb mariadb:latest --port 3306
-#+end_src
-
-* Realizzazione
-La web app è strutturata seguendo il *Model View Controller* framework.
-Per gestire le dipendenze e namespaces di PHP viene utilizzato *composer*.
-
-** Entry point - index.php
-La home page, si occupa di inizializzare l'applicazione ed impostare le route con annesso array [Controller, metodo].
-
-#+begin_src php
-$app = new Application(dirname(__DIR__));
-$app->router->get("/", [SiteController::class, "home"]);
-#+end_src
-
-** Core
-*** Main application class
-La classe principale, si occupa di istanziare:
-- la Router class
-- la Request helper class
-- la Response helper class
-
-Rappresenta il fulcro della web app.
-Rende possibile l'accesso a tutte le classi da essa istaziate tramite la viariabile statica "$app".
-
-Gestisce tutti i controller tramite "BaseController".
-
-*** Router class
-Una delle classi principali è il Router, gestisce l'array associativo "$routes" e la risoluzione delle varie request effettuate.
-
-L'array associativo "$routes" è diviso in 2 grandi sottogruppi:
-- sottogruppo "get"
-- sottogruppo "post"
-#+begin_src php
-public function get($path, $callback) {
-    $this->routes["get"][$path] = $callback;
-}
-
-public function post($path, $callback) {
-    $this->routes["post"][$path] = $callback;
-}
-#+end_src
-
-Ogni sottogruppo a sua volta è formato da 2 campi: "path" => "method".
-#+begin_example
-{
-    ["get"] => {
-        ["/"] => func(),
-        ["/test"] => func(),
-    },
-
-    ["post"] => {
-        ["/"] => func(),
-        ["/test"] => func(),
-    }
-}
-#+end_example
-
-Metodi:
-- "get()": imposta la route con metodo get
-- "post()": imposta la route con metodo post
-- "resolve()": utilizzando la Request helper class ricava quale funzione di callback chiamare sullo specifico path e metodo richiesto
-- "renderView()": unisce la view al layout del controller che la gestisce per poi venire mostrata all'utente finale come un'unica pagina:
-  + "loadLayoutContent()": restituisce il contenuto del layout selezionato dal controller della specifica view
-  + "loadViewContent()": restituisce il contenuto della specifica view
-
-Per leggere il contenuto della view e del layout si utilizza la funzione "ob_start()" che attiva l'output buffering, invece di inviare l'output all'utente richiedente esso viene salvato in un buffer interno.
-I dati salvati nel buffer possono venire recuperati tramite la funzione "ob_get_clean()" che a sua volta esegue "ob_get_contents()", per convertire i dati contenuti nel buffer in string, e "ob_end_clean()" per cancellare il buffer.
-#+begin_src php
-# loadViewContent() snippet
-ob_start();
-include_once Application::$ROOT_DIR."/views/$view.php";
-return ob_get_clean();
-#+end_src
-
-Una volta prelevati i contenuti del layout e della view, si effettua una semplice str_replace per ottenere la view finale da poter mostrare all'utente.
-#+begin_src php
-# renderView() snippet
-$layoutContent = $this->loadLayoutContent();
-$viewContent = $this->loadViewContent($view, $params);
-
-return str_replace("{{content}}", $viewContent, $layoutContent);
-#+end_src
-
-*** Request class
-Una classe helper, analizza le requests e restituisce l'informazione necessaria al richiedente.
-
-Metodi:
-- "getPath()": restituisce il path richiesto, se viene passata una query string insieme al path essa non viene restituita. (Utile a Router resolve())
-- "getMethod()": restituisce il metodo utilizzato nella request in minuscolo. (Utile a Router resolve())
-- "getBody()": restituisce i valori inseriti nella richiesta, sia essa una GET o una POST.
-
-*** Base model class
-Classe model di base.
-Tutti i model si basano su questa classe, facilmente permettendo:
-- lettura dei dati tramite il metodo "loadData($data)"
-- impostazione di regole tramite il metodo astratto "rules()" e le costanti "RULE_*"
-- verifica della correttezza dei dati inseriti dall'utente tramite il metodo "validate()"
-- notificazione della presenza di errori all'utente tramite i metodi:
-  + "addError()"
-  + "errorMessage()"
-
-La verifica della validità di un dato viene effettuata attraverso l'iterazione dell'array associtivo restituito dal metodo astratto "rules()".
-#+begin_example
-[
-    "attributo0" => [self::RULE_REQUIRED],
-    "attributo1" => [self::RULE_REQUIRED, [ self::RULE_MIN, "min" => 20 ], [ self::RULE_MAX, "max" => 100 ]],
-]
-#+end_example
-
-Per ogni "attributo => regole" e per ogni regola (un attributo può avere più regole) verifica quale controllo eseguire ed aggiunge un messaggio di errore in caso di fallimento del controllo.
-#+begin_src php
-# BaseModel::validate() snippet
-if ($ruleName == self::RULE_REQUIRED && !$value) {
-    $this->addError($attribute, self::RULE_REQUIRED);
-}
-if ($ruleName == self::RULE_EMAIL && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
-    $this->addError($attribute, self::RULE_EMAIL);
-}
-if ($ruleName == self::RULE_MIN && strlen($value) < $rule["min"]) {
-    $this->addError($attribute, self::RULE_MIN, $rule);
-}
-if ($ruleName == self::RULE_MAX && strlen($value) > $rule["max"]) {
-    $this->addError($attribute, self::RULE_MAX, $rule);
-}
-if ($ruleName == self::RULE_MATCH && $value != $this->{$rule["match"]}) {
-    $this->addError($attribute, self::RULE_MATCH, $rule);
-}
-#+end_src
-
-*** Database class
-Il compito della Database class è quello di effettuare una connessione al server mariadb in esecuzione sul docker container ed applicare delle [[./www/Migrations][migration]].
-Sia le credenziali di accesso al database che il domain service name (DSN) sono salvate nel file "www/.env" (vedi [[./www/.env.example][.env.example]]) e per leggerle si utilizza il package [[https://github.com/vlucas/phpdotenv][phpdotenv]].
-
-Installazione phpdotenv:
-#+begin_src bash
-cd www
-composer require vlucas/phpdotenv
-#+end_src
-
-Attraverso il metodo "applyMigrations()" la Database class è in grado di:
-- creare la migration table se non esiste nel DB
-- selezionare le migration presenti nella migration table
-- per ogni migration non presente nel DB, creare un'istanza ed esegue il metodo "up()"
-
-*** Database model class
-La classe DbModel si basa sulla base Database class ma viene trattata come l'effettiva SQL table.
-
-** Migrations
-
-È importante che le migration class siano ordinate e che seguano tutte lo stesso stile di nomeclatura.
-La creazione di una migration class può essere effettuata tramite lo script [[./scripts/createMigration.sh][createMigration]].
-#+begin_src bash
-./scripts/createMigration pathToMigrationsDir migrationName
-#+end_src
-
-Queste classi vengono istanziate dalla core class *Database* attraverso il metodo "applyMigrations()".
-
-Ogni migration class è formata da _almeno_ 2 metodi:
-- "up()": esegue del codice SQL per effettuare una modifica al DB
-- "down()": esegue del codice SQL per annullare la modifica
-
-** Models
-Le classi "Model" gestiscono i dati presenti nel database e controlla che i dati seguano delle determinate regole.
-Tutte le classi Model derivano dalla classe "BaseModel" o "DbModel".
-
-*** Registration model - User model
-Il model di registrazione si occupa della gestione dei dati di nuovi utenti e dell'interazione con il database.
-
-Attraverso l'implementazione del metodo astratto "rules()" si possono impostare le regole che i campi della form dovranno seguire.
-
-I nomi dei parametri di questa classe non devono necessariamente coincidere con i label visibili dall'utente.
-Questo perchè utilizzando il metodo "labels()" è possibile mappare i nomi dei parametri ai label che appaiono all'utente.
-
-L'effettiva registrazione dell'utente attraverso l'inserimento dei valori all'interno del database viene eseguita dal metodo "save()".
-"save()" è un metodo a cui tutti i model che estendono "DbModel" possono accedere, questo perchè sono la rappresentazione della tabella presente nel database.
-
-*** Login model - LoginForm model
-Model molto semplice, non basato sul DbModel ma bensì sul BaseModel in quanto non deve interagire direttamente con il database.
-
-Inviata la POST request per effettuare il login esso cerca nel database un utente che abbia l'indirizzo email fornito dall'utente, se lo trova controlla la correttezza della password.
-
-*** Vtuber model
-Model utilizzato per interagire con il database di vtuber.
-
-Simile al model di registrazione ma con 2 importanti metodi:
-- *getVtuberInfo()*: controlla che il link inserito sia l'URL ad un canale twitch o youtube ed utilizzando i rispettivi API(Twitch o Google) recupara le informazioni della vtuber in questione
-- *isLive()*: controlla se la vtuber in questione è live o no, utilizzando l'API Twitch o tramite curl request per canali YT
-
-** Controllers
-Le classi "Controller" svolgono il ruolo di ponte.
-Esse permettono ai dati di apparire nella View richiesta dall'utente una volta prelevati dal database o di venirvi inseriti tramite una form.
-
-*** Authentication controller
-L'authentication controller ha 2 compiti fondamentali:
-- registrare nuovi utenti con l'aiuto della classe "RegisterModel"
-- permettere l'accesso ad utenti già registrati

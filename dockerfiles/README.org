@@ -1,0 +1,38 @@
+#title: Containers
+
+* Contenuti :TOC:
+- [[#gestione-containers][Gestione containers]]
+- [[#creazione-ed-esecuzione-containers][Creazione ed esecuzione containers]]
+
+* Gestione containers
+La creazione e gestione dei container viene effettuata tramite *docker-compose* ed il file di configurazione [[./docker-compose.yml][docker-compose.yml]].
+Il file di configurazione utilizza il linguaggio markup YAML ed è composto da 2 parti principali:
+- *version*: la versione utilizzata da docker-compose
+- *services*: lista di container da creare
+
+Ogni container deve avere un nome univoco ed il campo:
+- *build*: se si utilizza un dockerfile
+- *image*: se si utilizza una container image
+
+#+begin_src yaml
+version: '3'
+
+services:
+  web:
+    build: ./path/to/Dockerfile
+
+  app:
+    image: php:8.1.6RC1-fpm-alpine3.15
+#+end_src
+
+* Creazione ed esecuzione containers
+Una volta configurato il file di configurazione a nostro piacimento, la creazione ed esecuzione dei container è molto semplice.
+
+*È necessario essere nella stessa directory del file di configurazione .yml!*
+Utilizzando il comando "*build*" vengono create le container image dei dockerfile specificati nel file di configurazione o vengono scaricate dalla repository principale [[https://hub.docker.com/search?q=][hub.docker]].
+Per effettivamente eseguire i container è necessario utilizzare il comando "*up*".
+
+#+begin_src bash
+docker-compose build
+docker-compose up -d
+#+end_src

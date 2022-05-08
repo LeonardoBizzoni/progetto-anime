@@ -1,0 +1,204 @@
+#+title: Web app
+
+* Contenuti :TOC:
+- [[#realizzazione][Realizzazione]]
+  - [[#entry-point---indexphp][Entry point - index.php]]
+  - [[#core][Core]]
+  - [[#migrations][Migrations]]
+  - [[#models][Models]]
+  - [[#controllers][Controllers]]
+
+* Realizzazione
+La web app è strutturata seguendo il *Model View Controller* framework.
+Per gestire le dipendenze e namespaces di PHP viene utilizzato *composer*.
+
+** Entry point - index.php
+La home page, si occupa di inizializzare l'applicazione ed impostare le route con annesso array [Controller, metodo].
+
+#+begin_src php
+$app = new Application(dirname(__DIR__));
+$app->router->get("/", [SiteController::class, "home"]);
+#+end_src
+
+** Core
+*** Main application class
+La classe principale, si occupa di istanziare:
+- la Router class
+- la Request helper class
+- la Response helper class
+
+Rappresenta il fulcro della web app.
+Rende possibile l'accesso a tutte le classi da essa istaziate tramite la viariabile statica "$app".
+
+Gestisce tutti i controller tramite "BaseController".
+
+*** Router class
+Una delle classi principali è il Router, gestisce l'array associativo "$routes" e la risoluzione delle varie request effettuate.
+
+L'array associativo "$routes" è diviso in 2 grandi sottogruppi:
+- sottogruppo "get"
+- sottogruppo "post"
+#+begin_src php
+public function get($path, $callback) {
+    $this->routes["get"][$path] = $callback;
+}
+
+public function post($path, $callback) {
+    $this->routes["post"][$path] = $callback;
+}
+#+end_src
+
+Ogni sottogruppo a sua volta è formato da 2 campi: "path" => "method".
+#+begin_example
+{
+    ["get"] => {
+        ["/"] => func(),
+        ["/test"] => func(),
+    },
+
+    ["post"] => {
+        ["/"] => func(),
+        ["/test"] => func(),
+    }
+}
+#+end_example
+
+Metodi:
+- "get()": imposta la route con metodo get
+- "post()": imposta la route con metodo post
+- "resolve()": utilizzando la Request helper class ricava quale funzione di callback chiamare sullo specifico path e metodo richiesto
+- "renderView()": unisce la view al layout del controller che la gestisce per poi venire mostrata all'utente finale come un'unica pagina:
+  + "loadLayoutContent()": restituisce il contenuto del layout selezionato dal controller della specifica view
+  + "loadViewContent()": restituisce il contenuto della specifica view
+
+Per leggere il contenuto della view e del layout si utilizza la funzione "ob_start()" che attiva l'output buffering, invece di inviare l'output all'utente richiedente esso viene salvato in un buffer interno.
+I dati salvati nel buffer possono venire recuperati tramite la funzione "ob_get_clean()" che a sua volta esegue "ob_get_contents()", per convertire i dati contenuti nel buffer in string, e "ob_end_clean()" per cancellare il buffer.
+#+begin_src php
+# loadViewContent() snippet
+ob_start();
+include_once Application::$ROOT_DIR."/views/$view.php";
+return ob_get_clean();
+#+end_src
+
+Una volta prelevati i contenuti del layout e della view, si effettua una semplice str_replace per ottenere la view finale da poter mostrare all'utente.
+#+begin_src php
+# renderView() snippet
+$layoutContent = $this->loadLayoutContent();
+$viewContent = $this->loadViewContent($view, $params);
+
+return str_replace("{{content}}", $viewContent, $layoutContent);
+#+end_src
+
+*** Request class
+Una classe helper, analizza le requests e restituisce l'informazione necessaria al richiedente.
+
+Metodi:
+- "getPath()": restituisce il path richiesto, se viene passata una query string insieme al path essa non viene restituita. (Utile a Router resolve())
+- "getMethod()": restituisce il metodo utilizzato nella request in minuscolo. (Utile a Router resolve())
+- "getBody()": restituisce i valori inseriti nella richiesta, sia essa una GET o una POST.
+
+*** Base model class
+Classe model di base.
+Tutti i model si basano su questa classe, facilmente permettendo:
+- lettura dei dati tramite il metodo "loadData($data)"
+- impostazione di regole tramite il metodo astratto "rules()" e le costanti "RULE_*"
+- verifica della correttezza dei dati inseriti dall'utente tramite il metodo "validate()"
+- notificazione della presenza di errori all'utente tramite i metodi:
+  + "addError()"
+  + "errorMessage()"
+
+La verifica della validità di un dato viene effettuata attraverso l'iterazione dell'array associtivo restituito dal metodo astratto "rules()".
+#+begin_example
+[
+    "attributo0" => [self::RULE_REQUIRED],
+    "attributo1" => [self::RULE_REQUIRED, [ self::RULE_MIN, "min" => 20 ], [ self::RULE_MAX, "max" => 100 ]],
+]
+#+end_example
+
+Per ogni "attributo => regole" e per ogni regola (un attributo può avere più regole) verifica quale controllo eseguire ed aggiunge un messaggio di errore in caso di fallimento del controllo.
+#+begin_src php
+# BaseModel::validate() snippet
+if ($ruleName == self::RULE_REQUIRED && !$value) {
+    $this->addError($attribute, self::RULE_REQUIRED);
+}
+if ($ruleName == self::RULE_EMAIL && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
+    $this->addError($attribute, self::RULE_EMAIL);
+}
+if ($ruleName == self::RULE_MIN && strlen($value) < $rule["min"]) {
+    $this->addError($attribute, self::RULE_MIN, $rule);
+}
+if ($ruleName == self::RULE_MAX && strlen($value) > $rule["max"]) {
+    $this->addError($attribute, self::RULE_MAX, $rule);
+}
+if ($ruleName == self::RULE_MATCH && $value != $this->{$rule["match"]}) {
+    $this->addError($attribute, self::RULE_MATCH, $rule);
+}
+#+end_src
+
+*** Database class
+Il compito della Database class è quello di effettuare una connessione al server mariadb in esecuzione sul docker container ed applicare delle [[./www/Migrations][migration]].
+Sia le credenziali di accesso al database che il domain service name (DSN) sono salvate nel file "www/.env" (vedi [[./www/.env.example][.env.example]]) e per leggerle si utilizza il package [[https://github.com/vlucas/phpdotenv][phpdotenv]].
+
+Installazione phpdotenv:
+#+begin_src bash
+cd www
+composer require vlucas/phpdotenv
+#+end_src
+
+Attraverso il metodo "applyMigrations()" la Database class è in grado di:
+- creare la migration table se non esiste nel DB
+- selezionare le migration presenti nella migration table
+- per ogni migration non presente nel DB, creare un'istanza ed esegue il metodo "up()"
+
+*** Database model class
+La classe DbModel si basa sulla base Database class ma viene trattata come l'effettiva SQL table.
+
+** Migrations
+
+È importante che le migration class siano ordinate e che seguano tutte lo stesso stile di nomeclatura.
+La creazione di una migration class può essere effettuata tramite lo script [[./scripts/createMigration.sh][createMigration]].
+#+begin_src bash
+./scripts/createMigration pathToMigrationsDir migrationName
+#+end_src
+
+Queste classi vengono istanziate dalla core class *Database* attraverso il metodo "applyMigrations()".
+
+Ogni migration class è formata da _almeno_ 2 metodi:
+- "up()": esegue del codice SQL per effettuare una modifica al DB
+- "down()": esegue del codice SQL per annullare la modifica
+
+** Models
+Le classi "Model" gestiscono i dati presenti nel database e controlla che i dati seguano delle determinate regole.
+Tutte le classi Model derivano dalla classe "BaseModel" o "DbModel".
+
+*** Registration model - User model
+Il model di registrazione si occupa della gestione dei dati di nuovi utenti e dell'interazione con il database.
+
+Attraverso l'implementazione del metodo astratto "rules()" si possono impostare le regole che i campi della form dovranno seguire.
+
+I nomi dei parametri di questa classe non devono necessariamente coincidere con i label visibili dall'utente.
+Questo perchè utilizzando il metodo "labels()" è possibile mappare i nomi dei parametri ai label che appaiono all'utente.
+
+L'effettiva registrazione dell'utente attraverso l'inserimento dei valori all'interno del database viene eseguita dal metodo "save()".
+"save()" è un metodo a cui tutti i model che estendono "DbModel" possono accedere, questo perchè sono la rappresentazione della tabella presente nel database.
+
+*** Login model - LoginForm model
+Model molto semplice, non basato sul DbModel ma bensì sul BaseModel in quanto non deve interagire direttamente con il database.
+
+Inviata la POST request per effettuare il login esso cerca nel database un utente che abbia l'indirizzo email fornito dall'utente, se lo trova controlla la correttezza della password.
+
+*** Vtuber model
+Model utilizzato per interagire con il database di vtuber.
+
+Simile al model di registrazione ma con 2 importanti metodi:
+- *getVtuberInfo()*: controlla che il link inserito sia l'URL ad un canale twitch o youtube ed utilizzando i rispettivi API(Twitch o Google) recupara le informazioni della vtuber in questione
+- *isLive()*: controlla se la vtuber in questione è live o no, utilizzando l'API Twitch o tramite curl request per canali YT
+
+** Controllers
+Le classi "Controller" svolgono il ruolo di ponte.
+Esse permettono ai dati di apparire nella View richiesta dall'utente una volta prelevati dal database o di venirvi inseriti tramite una form.
+
+*** Authentication controller
+L'authentication controller ha 2 compiti fondamentali:
+- registrare nuovi utenti con l'aiuto della classe "RegisterModel"
+- permettere l'accesso ad utenti già registrati
