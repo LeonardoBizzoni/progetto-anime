@@ -93,49 +93,6 @@ class Vtubers extends DbModel
 
     public function isLive(string $login, string $link)
     {
-        // if (str_contains($link, "twitch.tv")) {
-        //     $clientID = Application::$app->config["twitch"]["clientid"] ?? "";
-        //     $token = Application::$app->config["twitch"]["token"] ?? "";
-
-        //     $url = "https://api.twitch.tv/helix/streams?user_login=$login";
-
-        //     $ch = curl_init($url);
-        //     curl_setopt($ch, CURLOPT_URL, $url);
-        //     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        //     curl_setopt($ch, CURLOPT_HTTPHEADER, array("Client-ID: $clientID", "Authorization: Bearer $token"));
-
-        //     $result = get_object_vars(json_decode(curl_exec($ch)));
-        //     curl_close($ch);
-
-        //     return count($result["data"]) ? $result["data"] : [];
-        // }
-
-        // if (str_contains($link, "youtube.com")) {
-        //     $url = "https://www.youtube.com/channel/$login/live";
-
-        //     $ch = curl_init($url);
-        //     curl_setopt($ch, CURLOPT_URL, $url);
-        //     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-
-        //     $result = curl_exec($ch);
-        //     curl_close($ch);
-
-        //     $doc = new DOMDocument();
-        //     libxml_use_internal_errors(true);
-        //     $doc->loadHTML($result);
-
-        //     $result = $doc->getElementsByTagName("link");
-        //     $length = $result->length;
-
-        //     for ($i = 0; $i < $length; $i++) {
-        //         $tag = $result->item($i)->getAttribute("href");
-        //         if (str_contains($tag, "https://www.youtube.com/watch?v=")) {
-        //             return [str_replace("https://www.youtube.com/watch?v=", "",  $tag)];
-        //         }
-        //     }
-
-        //     unset($doc);
-        // }
 
         return [];
     }
