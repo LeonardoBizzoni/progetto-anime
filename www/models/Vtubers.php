@@ -93,6 +93,14 @@ class Vtubers extends DbModel
 
     public function isLive(string $login, string $link)
     {
+        $stmt = parent::prepare("SELECT login, link, live FROM vtubers WHERE login='$login' AND link='$link';");
+        $stmt->execute();
+
+        $row = $stmt->fetch();
+
+        if (isset($row["live"])) {
+            return $row["live"];
+        }
 
         return [];
     }

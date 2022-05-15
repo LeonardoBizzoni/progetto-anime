@@ -38,7 +38,7 @@ if (!isset($_GET["id"])) {
     echo "<h2>Currently live</h2>";
     echo "<ul>";
     foreach ($params[0] as $idol) {
-        if (count($idol[1]) > 0)
+        if (gettype($idol[1]) == "string")
             echo "<li><a href='/live?id=" . $idol[0]["id"] . "'>" . ucfirst($idol[0]["username"]) . "</a></li>";
     }
     echo "</ul>";
@@ -46,7 +46,7 @@ if (!isset($_GET["id"])) {
     echo "<h2>Currently offline</h2>";
     echo "<ul>";
     foreach ($params[0] as $idol) {
-        if (count($idol[1]) == 0)
+        if (gettype($idol[1]) == "array")
             echo "<li><a href='/live?id=" . $idol[0]["id"] . "'>" . ucfirst($idol[0]["username"]) . "</a></li>";
     }
     echo "</ul>";
@@ -76,7 +76,7 @@ if (!isset($_GET["id"])) {
             if (str_contains($vtuber[0]["link"], "twitch.tv")) {
                 echo "<iframe src=\"https://player.twitch.tv/?channel=" . $vtuber[0]["login"] . "&parent=localhost\" frameborder=\"0\" allowfullscreen=\"true\" scrolling=\"no\"></iframe>";
             } else {
-                echo "<iframe src=\"https://www.youtube.com/embed/" . $vtuber[1][0] . "\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\" allowfullscreen></iframe>";
+                echo "<iframe src=\"".str_replace("watch?v=", "embed/", $vtuber[1])."\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\" allowfullscreen></iframe>";
             }
     ?>
             </div>
