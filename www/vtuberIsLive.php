@@ -49,6 +49,7 @@ while (true) {
             curl_close($ch);
 
             if (count($result["data"])) {
+                echo $login."\n";
                 $stmt = $app->db->pdo->prepare("update vtubers set live='twitch.tv/$login' where id=" . $vtuber["id"]);
                 $stmt->execute();
                 $isLive = true;
@@ -75,6 +76,7 @@ while (true) {
             for ($i = 0; $i < $length; $i++) {
                 $tag = $result->item($i)->getAttribute("href");
                 if (str_contains($tag, "https://www.youtube.com/watch?v=")) {
+                    echo $tag."\n";
                     $stmt = $app->db->pdo->prepare("update vtubers set live='$tag' where id=" . $vtuber["id"]);
                     $stmt->execute();
                     $isLive = true;
