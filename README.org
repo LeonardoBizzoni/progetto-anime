@@ -63,15 +63,29 @@ Una volta cliccato verrà chiesto all'utente l'inserimento dell'URL del canale d
 
 * DONE Setup
 ** Configurazione ed installazione server
-/Architettua a 3 livelli./
+L'architettura a 3 livelli è un'architettura software che organizza il codice in 3 livelli logici:
+- Presentation layer: interfaccia con l'utente
+- Application layer: dove i dati vengono processati
+- Data layer: dove i dati dell'applicazione vengono immagazzinati ed organizzati
+
+Un vantaggio che offre questa architettura è la netta divisione delle 3 parti, questo permette la modifica o completo cambiamento di un layer senza andare ad influenzarne altri.
 
 *** Presentation Layer - Nginx
+Il presentation layer è il layer che si occupa dell'interazione con l'utente.
+Il suo compito principale è quello di mostrare e ricevere informazioni dal client.
+
 Ho deciso di utilizzare Nginx come web server per le performance nettamente migliori e leggerezza in confronto ad altri web server.
 Inoltre la configura di Nginx è molto più semplice di web server come Apache.
+[[./media/nginxApacheGraph.png]]
 
 /Soluzioni microsoft come il web server IIS non sono state considerate per via delle license sotto cui sono pubblicate ed a causa del mio odio verso i loro prodotti./
 
-*** Business Logic Layer - PHP
+*** Application Layer - PHP
+L'application layer rappresenta il cuore dell'applicazione.
+In questo layer le informazioni ricevute dal presentation layer vengono elaborate anche in base a dati presenti nel data layer.
+L'application layer può inoltre aggiungere, cancellare e modificare i dati nel data layer.
+
+Un docker container si occupa dell'esecuzione di php-fpm e rimane in ascolto sulla porta 9000.
 
 *** Data Layer - MariaDB
 L'installazione del database server mariadb viene anch'essa eseguita tramite un docker container e la container image disponibile su [[https://hub.docker.com/_/mariadb][hub.docker]] per cui non ha bisogno di alcuna configurazione.
