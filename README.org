@@ -66,3 +66,22 @@ Il data layer si occupa della gestione ed immagazinamento dei dati generati dall
 /Il presentation layer non genera dati visto che opera come un reverse proxy./
 
 L'installazione del database server mariadb viene anch'essa eseguita tramite un docker container e la container image disponibile su [[https://hub.docker.com/_/mariadb][hub.docker]] per cui non ha bisogno di alcuna configurazione.
+
+**** Schema E/R
+[[./media/dbER.jpg]]
+
+#TODO: descrizione schema ER
+
+**** Schema logico
+[[./media/dbLogico.jpg]]
+
+Le tabelle principali sono 3:
+- *users*: contiene i dati degli utenti
+- *favoriteVtuber*: vista la possibilità di un utente di avere più vtuber preferite e di conseguenza un vtuber può essere la preferita di più utenti è necessario aggiunngere una tabella tra queste 2 tabelle
+- *vtubers*: contiene i dati delle vtuber in elenco
+
+La tabella *migrations* viene utilizzata per tenere traccia delle migrazioni applicate sul database.
+
+Per effettuare una modifica al database si utilizza lo script PHP [[./www/migrationScript.php][migrationScript]], questo prende *in ordine* tutte le *classi migration* presenti nella directory [[./www/Migrations][Migrations]].
+Lo script chiama di ogni classe il metodo "*up()*" che applica la modifica al database, crea una nuova entry nella tabella migrations per indicare che la migration in questione è stata applicata.
+Prima di eseguire il metodo "up()" controlla che la migration non sia già stata applicata cercando una entry che abbia il nome della migration, se lo trova non esegue il metodo "up()" e prosegue con la successiva migration, se non lo trova deve eserguirla ed aggiungere una entry nella tabella.
