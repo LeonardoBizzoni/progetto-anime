@@ -53,7 +53,7 @@ In questo layer le informazioni ricevute dal presentation layer vengono elaborat
 L'application layer può inoltre aggiungere, cancellare e modificare i dati nel data layer.
 
 Un docker container si occupa dell'esecuzione di php-fpm e rimane in ascolto sulla porta 9000, questo permette al presentation layer (nginx) di operare similarmente ad un *reverse proxy*: quando riceve una richiesta per una risorsa *.php la inoltra al server php-fpm.
-[[./media/proxy.svg]]
+[[./media/proxy.jpg]]
 
 **** Reverse e Forward proxy
 Un *forward proxy*, a differenza di un reverse, è logicamente situato /prima/ di un gruppo di macchine *client* e svolge il compito di *middleman* ricevendo le richieste dai client ed inviandole lui stesso a destinazione.
