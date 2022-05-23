@@ -6,6 +6,7 @@ class Router
 {
     private array $routes = [];
 
+    public string $title;
     public Request $req;
     public Response $res;
 
@@ -40,7 +41,7 @@ class Router
             Application::$app->setController(new $callback[0]);
             $callback[0] = Application::$app->getController();
 
-            return call_user_func($callback, $this->req);
+            return call_user_func($callback, $this->req, $this->res);
         } else {
             $this->res->setStatusCode(404);
             return $this->renderView("404");
@@ -57,7 +58,10 @@ class Router
 
     private function loadLayoutContent()
     {
-        $layout = Application::$app->getController()->layout;
+        $layout = Application::$app->layout;
+        if (Application::$app->getController()) {
+            $layout = Application::$app->getController()->layout;
+        }
         ob_start();
         include_once Application::$ROOT_DIR . "/views/layouts/$layout.php";
         return ob_get_clean();

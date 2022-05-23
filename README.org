@@ -2,64 +2,33 @@
 
 * Tabella dei contenuti :TOC:
 - [[#descrizione-del-progetto][Descrizione del progetto]]
-  - [[#idea-home-page][IDEA Home page]]
-  - [[#idea-popolazione-del-database][IDEA Popolazione del database]]
-  - [[#live-page][Live page]]
+  - [[#home-page][Home page]]
+  - [[#list-page][List page]]
 - [[#setup][Setup]]
   - [[#configurazione-ed-installazione-server][Configurazione ed installazione server]]
 
 * Descrizione del progetto
-Attraverso la web app è possibile registrare un account con cui è possibile tenere traccia di:
-- Anime visti
-- Manga/light novel lette
-- Visual novel giocate
-
-Inoltre attravero la pagina "live" è possibile visualizzare quali vtuber sono attualmente live e partecipare ad una di esse senza doversi recare sul sito di streaming da loro adottato.
+Attraverso la web app è possibile visualizzare quali vtuber sono attualmente live e partecipare ad una di esse senza doversi recare sul sito di streaming da loro adottato.
 Gli utenti registrati possono anche aggiungere una vtuber alla loro lista personale di vtuber preferite e ricevere una notifica via email quando una di esse va in onda.
 
 Un utente può anche richiedere l'aggiunta di una vtuber al catalogo della web app, qualora essa non ne faccia già parte, semplicemente inviando, tramite l'apposito form, l'URL al canale della vtuber, sia esso su [[twitch.tv/][twitch]] o [[youtube.com/][youtube]].
 
-** IDEA Home page
-Nella home page è possibile visualizzare una lista delle ultime uscite, divise per categoria [anime, manga, LN, VN] e per genere [azione, horror, sportivo, sci-fi, ...].
-
-** IDEA Popolazione del database
-*** Anime
-- Titolo
-- Tipo di anime [film, serie TV, speciale]
-- Stato pubblicazione
-    + Numero episodi se lo stato è *concluso*
-- Data di inizio/fine pubblicazione
-- Trama
-- Generi
-- Immagine di copertina
-
-*** Manga e Light novels
-- Titolo
-- Stato pubblicazione
-  + Numero di capitoli e volumi se lo stato è *concluso*
-- Data di inizio/fine pubblicazione
-- Trama
-- Generi
-- Immagine di copertina
-
-*** Visual novels
-- Titolo
-- Link del seller
-- Trama
-- Generi
-- Immagine di copertina
-
-** TODO Live page
-Attraverso la pagina "live" è possibile partecipare alla stream di una vtuber direttamente senza recarsi sul sito di streaming da loro utilizzato.
-Nonappena si visita quasta pagina vengono visualizzate 3 liste:
-- *Preferite*: lista dedicata alle vtuber preferite dell'utente attualmente in live
+** DONE Home page
+Attraverso la pagina "home" è possibile partecipare alla stream di una vtuber direttamente senza recarsi sul sito di streaming da loro utilizzato.
+Appena si visita quasta pagina vengono visualizzate 2 liste:
 - *In live*: lista di tutte le vtuber presenti nel catalogo attualmente in onda
 - *Offline*: lista delle vtuber presenti nel catalogo attualmente non in onda
 
+Se l'utente è registrato allora viene visualizzata un'ulteriore lista che mostra le live attualmente in onda dell vtuber preferite dall'utente.
+
 L'aggiunta di una vtuber viene effettuata tramite l'apposito form visibile agli utenti registrati tramite il tasto "Add vtuber".
 Una volta cliccato verrà chiesto all'utente l'inserimento dell'URL del canale della vtuber che desidera venga aggiunta al catalogo.
-/In qualche modo dovrei tipo controllare che non venga mandata merda, pensavo tipo mi manda una mail quando un utente vuole aggiungere roba ed aspetta una mia risposta prima di aggiungere, però boh troppo sbatti da parte mia./
-/Un'altra roba epica da fare è tipo spostare il controllo se una vtuber è live ad uno script epico in esecuzione sul server separato dal webserver così da rendere la visualizzazione della pagina più rapida visto che ora per renderla un minimo più rapida utilizzo la cache della pagina. Si la pagina è lenta in culo ora./
+
+** TODO List page
+Attraverso la pagina "list", visibile solo agli utenti registrati, un utente può gestire le sue vtuber preferite.
+L'utente può quindi:
+- decidere di rimuovere una vtuber dai suoi preferiti
+- disabilitare l'invio delle notifiche via email.
 
 * DONE Setup
 ** Configurazione ed installazione server
@@ -74,18 +43,26 @@ Un vantaggio che offre questa architettura è la netta divisione delle 3 parti, 
 Il presentation layer è il layer che si occupa dell'interazione con l'utente.
 Il suo compito principale è quello di mostrare e ricevere informazioni dal client.
 
-Ho deciso di utilizzare Nginx come web server per le performance nettamente migliori e leggerezza in confronto ad altri web server.
+Ho deciso di utilizzare Nginx come web server per le migliori performance e leggerezza in confronto ad altri web server.
 Inoltre la configura di Nginx è molto più semplice di web server come Apache.
 [[./media/nginxApacheGraph.png]]
-
-/Soluzioni microsoft come il web server IIS non sono state considerate per via delle license sotto cui sono pubblicate ed a causa del mio odio verso i loro prodotti./
 
 *** Application Layer - PHP
 L'application layer rappresenta il cuore dell'applicazione.
 In questo layer le informazioni ricevute dal presentation layer vengono elaborate anche in base a dati presenti nel data layer.
 L'application layer può inoltre aggiungere, cancellare e modificare i dati nel data layer.
 
-Un docker container si occupa dell'esecuzione di php-fpm e rimane in ascolto sulla porta 9000.
+Un docker container si occupa dell'esecuzione di php-fpm e rimane in ascolto sulla porta 9000, questo permette al presentation layer (nginx) di operare similarmente ad un *reverse proxy*: quando riceve una richiesta per una risorsa *.php la inoltra al server php-fpm.
+[[./media/proxy.svg]]
+
+**** Reverse e Forward proxy
+Un *forward proxy*, a differenza di un reverse, è logicamente situato /prima/ di un gruppo di macchine *client* e svolge il compito di *middleman* ricevendo le richieste dai client ed inviandole lui stesso a destinazione.
+Utilizzando un forward proxy i server destinatari riceveranno richieste dall'indirizzo IP del proxy server e non del client originale, questo permette di nascondere il proprio indirizzo IP aumentando il proprio livello di sicurezza online.
+
+Al contratio un *reverse proxy* è logicamente situato /prima/ di un gruppo di macchine *server* e svolge il compito di ricevere le richieste, analizzarle ed inviarle al server che ritiene più adatto all'elaborazione.
 
 *** Data Layer - MariaDB
+Il data layer si occupa della gestione ed immagazinamento dei dati generati dall'application layer.
+/Il presentation layer non genera dati visto che opera come un reverse proxy./
+
 L'installazione del database server mariadb viene anch'essa eseguita tramite un docker container e la container image disponibile su [[https://hub.docker.com/_/mariadb][hub.docker]] per cui non ha bisogno di alcuna configurazione.

@@ -2,8 +2,9 @@
 namespace app\core;
 
 class Application {
-    private BaseController $controller;
+    private ?BaseController $controller = null;
 
+    public string $layout = "main";
     public $userClass;
     public array $config;
     public Router $router;
@@ -11,7 +12,7 @@ class Application {
     public Response $res;
     public Database $db;
     public Session $session;
-    public ?DbModel $user = null;
+    public ?DbModel $user;
 
     public static Application $app;
     public static string $ROOT_DIR;
@@ -33,6 +34,8 @@ class Application {
         if ($primaryValue) {
             $primaryKey = $this->userClass::primaryKey();
             $this->user = $this->userClass::findOne([$primaryKey => $primaryValue]);
+        } else {
+            $this->user = null;
         }
     }
 
@@ -61,6 +64,10 @@ class Application {
     public function logout() {
         $this->user = null;
         $this->session->remove("user");
+    }
+
+    public static function isGuest() {
+        return !self::$app->user;
     }
 }
 ?>

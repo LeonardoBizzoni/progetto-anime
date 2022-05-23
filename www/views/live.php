@@ -1,16 +1,19 @@
 <?php
+
+use app\core\Application;
+
 if (isset($_GET["aggiungi"])) {
     $model->addToFav();
     exit;
 }
 
-if (!isset($_GET["id"])) {
+if (count($model->errors) > 0) {
+    echo "<pre>";
+    var_dump($model->errors);
+    echo "</pre>";
+} else if (!isset($_GET["id"])) {
     echo "<h1>Live page</h1>";
-
 ?>
-
-    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">Add vtuber to the list</button>
-
     <!-- Modal -->
     <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -36,10 +39,11 @@ if (!isset($_GET["id"])) {
 
     <?php
     echo "<h2>Currently live</h2>";
-    echo "<ul>";
+    echo "<ul class='list-group list-group-flush'>";
     foreach ($params[0] as $idol) {
-        if (gettype($idol[1]) == "string")
-            echo "<li><a href='/live?id=" . $idol[0]["id"] . "'>" . ucfirst($idol[0]["username"]) . "</a></li>";
+        if (gettype($idol[1]) == "string") {
+            echo "<li class='list-group-item'><span class='badge bg-danger'>Live</span> <a href='/?id=" . $idol[0]["id"] . "'>" . ucfirst($idol[0]["username"]) . "</a></li>";
+        }
     }
     echo "</ul>";
 
@@ -47,7 +51,7 @@ if (!isset($_GET["id"])) {
     echo "<ul>";
     foreach ($params[0] as $idol) {
         if (gettype($idol[1]) == "array")
-            echo "<li><a href='/live?id=" . $idol[0]["id"] . "'>" . ucfirst($idol[0]["username"]) . "</a></li>";
+            echo "<li><a href='/?id=" . $idol[0]["id"] . "'>" . ucfirst($idol[0]["username"]) . "</a></li>";
     }
     echo "</ul>";
 } else {
@@ -60,10 +64,9 @@ if (!isset($_GET["id"])) {
         <div class=\"container-fluid\">
                 <h1>" . ucfirst($vtuber[0]["username"]) . "</h1>";
 
-            # TODO: controllo con session se l'utente è loggato
-            // echo "<button id='add' class='btn btn-primary' name='add'>Add to favorites</button>";
-            echo "<button id='add'>Add to favorites</button>";
-            # -------------------------------------------------
+            if (!Application::isGuest()) {
+                echo "<button id='add' type='button' class='btn btn-outline-light'>Add to favorites</button>";
+            }
 
             echo "<img class=\"idolLogo\" src=\"" . $vtuber[0]["img"] . "\"/>
         </div>
@@ -76,7 +79,7 @@ if (!isset($_GET["id"])) {
             if (str_contains($vtuber[0]["link"], "twitch.tv")) {
                 echo "<iframe src=\"https://player.twitch.tv/?channel=" . $vtuber[0]["login"] . "&parent=localhost\" frameborder=\"0\" allowfullscreen=\"true\" scrolling=\"no\"></iframe>";
             } else {
-                echo "<iframe src=\"".str_replace("watch?v=", "embed/", $vtuber[1])."\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\" allowfullscreen></iframe>";
+                echo "<iframe src=\"" . str_replace("watch?v=", "embed/", $vtuber[1]) . "\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\" allowfullscreen></iframe>";
             }
     ?>
             </div>
@@ -85,7 +88,7 @@ if (!isset($_GET["id"])) {
                 document.getElementById('add').onclick = function() {
                     let req = new XMLHttpRequest();
 
-                    req.open("get", "/live?aggiungi=1&id="+ <?php echo $_GET["id"] ?>, true);
+                    req.open("get", "/?aggiungi=1&id=" + <?php echo $_GET["id"] ?>, true);
                     req.send();
                 };
             </script>

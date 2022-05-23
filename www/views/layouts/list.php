@@ -11,7 +11,7 @@ use app\core\Application;
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
     <link rel="stylesheet" href="/css/main.css" type="text/css" media="screen" />
 
-    <title><?= $this->title ?></title>
+    <title>Document</title>
 </head>
 
 <body>
@@ -25,39 +25,35 @@ use app\core\Application;
             </button>
             <div class="collapse navbar-collapse" id="navbarNav" style="display: flex;">
 
-                <?php if (Application::isGuest()) : ?>
-                    <ul class="navbar-nav" style="margin-right: 0px; margin-left: auto;">
-                        <li class="nav-item">
-                            <a class="nav-link" href="/login">Login</a>
+                <ul class="navbar-nav" style="margin-right: 0px; margin-left: auto;">
+                    <div class="btn-group" role="group" aria-label="Basic outlined example">
+                        <li class="nav-item btn btn-outline-primary">
+                            <a class="nav-link" href="/list">Favorites</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/register">Register</a>
+                        <li class="nav-item btn btn-outline-primary">
+                            <a class="nav-link" href="/logout">Logout</a>
                         </li>
-                    </ul>
-                <?php else : ?>
-                    <ul class="navbar-nav" style="margin-right: 0px; margin-left: auto;">
-                        <div class="btn-group" role="group" aria-label="Basic outlined example">
-                            <?php if (!Application::isGuest()) {
-                                echo "<li class='nav-item btn btn-outline-primary'>";
-                                echo "<a class='nav-link' data-bs-toggle='modal' data-bs-target='#exampleModal' href=''>Add vtuber to the list</a>";
-                                echo "</li>";
-                            }
-                            ?>
-                            <li class="nav-item btn btn-outline-primary">
-                                <a class="nav-link" href="/list">Favorites</a>
-                            </li>
-                            <li class="nav-item btn btn-outline-primary">
-                                <a class="nav-link" href="/logout">Logout</a>
-                            </li>
-                        </div>
-                    </ul>
-                <?php endif; ?>
+                    </div>
+                </ul>
             </div>
         </div>
     </nav>
 
+
     <div class="container">
-        {{content}}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Icon</th>
+                    <th scope="col">Username</th>
+                    <th scope="col"></th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody class="table-group-divider">
+                {{content}}
+            </tbody>
+        </table>
     </div>
 
 </body>

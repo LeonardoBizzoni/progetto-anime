@@ -9,20 +9,21 @@ use app\models\Vtubers;
 
 class SiteController extends BaseController
 {
-    public function home()
+    public function list()
     {
-        $params = [
-            "name" => "Leonardo"
-        ];
-
-        return $this->render("home", $params);
+        Application::$app->router->title = "WeebSite - Your top vtubers";
+        $this->setLayout("list");
+        return $this->render("list");
     }
 
     public function live(Request $req)
     {
         $params = [];
-        $statement = Application::$app->db->pdo->prepare("SELECT * FROM vtubers;");
+        $singleVtuber = false;
         $vtuberModel = new Vtubers;
+
+        Application::$app->router->title = "WeebSite - Live";
+        $statement = Application::$app->db->pdo->prepare("SELECT * FROM vtubers;");
 
         if ($req->getMethod() == "post") {
             $vtuberModel->loadData($req->getBody());
@@ -33,6 +34,7 @@ class SiteController extends BaseController
             }
         } else if ($req->getMethod() == "get") {
             if (isset($_GET["id"])) {
+                $singleVtuber = true;
                 $this->setLayout("live");
                 $statement = Application::$app->db->pdo->prepare("SELECT * from vtubers where id={$_GET['id']}");
             }
@@ -40,6 +42,9 @@ class SiteController extends BaseController
 
             foreach ($statement->fetchAll() as $vtuber) {
                 $params[] = [ $vtuber, $vtuberModel->isLive($vtuber["login"], $vtuber["link"]) ];
+                if ($singleVtuber) {
+                    Application::$app->router->title = "WeebSite - ".$vtuber["username"];
+                }
             }
         }
 

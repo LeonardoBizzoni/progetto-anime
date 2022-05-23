@@ -4,7 +4,6 @@ namespace app\models;
 
 use app\core\Application;
 use app\core\DbModel;
-use DOMDocument;
 use Google_Client;
 use Google_Service_YouTube;
 

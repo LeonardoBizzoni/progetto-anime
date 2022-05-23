@@ -1,5 +1,4 @@
 <?php
-
 use app\core\Application;
 
 require_once __DIR__ . "/vendor/autoload.php";
@@ -25,12 +24,12 @@ $config = [
 $app = new Application(__DIR__, $config);
 
 while (true) {
-    $stmt = $app->db->pdo->prepare("select id, link, login from vtubers");
+    $stmt = $app->db->pdo->prepare("select * from vtubers");
     $stmt->execute();
     $data = $stmt->fetchAll();
-    $isLive = false;
 
     foreach ($data as $vtuber) {
+        $isLive = false;
         $link = $vtuber["link"];
         $login = $vtuber["login"];
 
@@ -49,7 +48,7 @@ while (true) {
             curl_close($ch);
 
             if (count($result["data"])) {
-                echo $login."\n";
+                echo "{$vtuber["username"]}\n";
                 $stmt = $app->db->pdo->prepare("update vtubers set live='twitch.tv/$login' where id=" . $vtuber["id"]);
                 $stmt->execute();
                 $isLive = true;
@@ -76,7 +75,7 @@ while (true) {
             for ($i = 0; $i < $length; $i++) {
                 $tag = $result->item($i)->getAttribute("href");
                 if (str_contains($tag, "https://www.youtube.com/watch?v=")) {
-                    echo $tag."\n";
+                    echo "{$vtuber["username"]} - $tag\n";
                     $stmt = $app->db->pdo->prepare("update vtubers set live='$tag' where id=" . $vtuber["id"]);
                     $stmt->execute();
                     $isLive = true;
