@@ -38,6 +38,17 @@ if (count($model->errors) > 0) {
     </div>
 
     <?php
+    if (!Application::isGuest()) {
+        echo "<h2>Favorites</h2>";
+        echo "<ul class='list-group list-group-flush'>";
+        foreach ($params[0] as $idol) {
+            if (gettype($idol[1]) == "string" && in_array($idol[0]["id"], $params[1])) {
+                echo "<li class='list-group-item'><span class='badge bg-danger'>Live</span> <a href='/?id=" . $idol[0]["id"] . "'>" . ucfirst($idol[0]["username"]) . "</a></li>";
+            }
+        }
+        echo "</ul>";
+    }
+
     echo "<h2>Currently live</h2>";
     echo "<ul class='list-group list-group-flush'>";
     foreach ($params[0] as $idol) {
@@ -64,7 +75,7 @@ if (count($model->errors) > 0) {
         <div class=\"container-fluid\">
                 <h1>" . ucfirst($vtuber[0]["username"]) . "</h1>";
 
-            if (!Application::isGuest()) {
+            if (!Application::isGuest() && !in_array($vtuber[0]["id"], $params[1])) {
                 echo "<button id='add' type='button' class='btn btn-outline-light'>Add to favorites</button>";
             }
 
@@ -85,11 +96,14 @@ if (count($model->errors) > 0) {
             </div>
             </div>
             <script>
-                document.getElementById('add').onclick = function() {
+                let btn = document.getElementById('add');
+                btn.onclick = function() {
                     let req = new XMLHttpRequest();
 
                     req.open("get", "/?aggiungi=1&id=" + <?php echo $_GET["id"] ?>, true);
                     req.send();
+
+                    btn.style = "display: none";
                 };
             </script>
 <?php

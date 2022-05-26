@@ -32,7 +32,7 @@ class SiteController extends BaseController
 
     public function live(Request $req)
     {
-        $params = [];
+        $vtuberLive = [];
         $singleVtuber = false;
         $vtuberModel = new Vtubers;
 
@@ -55,13 +55,22 @@ class SiteController extends BaseController
             $statement->execute();
 
             foreach ($statement->fetchAll() as $vtuber) {
-                $params[] = [$vtuber, $vtuberModel->isLive($vtuber["login"], $vtuber["link"])];
+                $vtuberLive[] = [$vtuber, $vtuberModel->isLive($vtuber["login"], $vtuber["link"])];
                 if ($singleVtuber) {
                     Application::$app->router->title = "WeebSite - " . $vtuber["username"];
                 }
             }
+
+            if (!Application::isGuest()) {
+                $statement = Application::$app->db->pdo->prepare("SELECT _vtuberID FROM favoriteVtuber where _userID=".Application::$app->user->id);
+                $statement->execute();
+
+                foreach ($statement->fetchAll() as $fav) {
+                    $favorites[] = $fav["_vtuberID"];
+                }
+            }
         }
 
-        return $this->render("live", ["model" => $vtuberModel, $params]);
+        return $this->render("live", ["model" => $vtuberModel, $vtuberLive, $favorites]);
     }
 }
