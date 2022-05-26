@@ -9,10 +9,24 @@ use app\models\Vtubers;
 
 class SiteController extends BaseController
 {
-    public function list()
+    public function list(Request $req)
     {
         Application::$app->router->title = "WeebSite - Your top vtubers";
         $this->setLayout("list");
+
+        if ($req->getMethod() == "post") {
+            if (isset($req->getBody()["rem"])) {
+                $stmt = Application::$app->db->pdo->prepare("DELETE FROM favoriteVtuber WHERE _userID=" . Application::$app->user->id . " AND _vtuberID=" . $req->getBody()["rem"]);
+                $stmt->execute();
+            } else if (isset($req->getBody()["notNotify"])) {
+                $stmt = Application::$app->db->pdo->prepare("UPDATE favoriteVtuber SET notify=0 WHERE _vtuberID=" . $req->getBody()["notNotify"]);
+                $stmt->execute();
+            } else if (isset($req->getBody()["notify"])) {
+                $stmt = Application::$app->db->pdo->prepare("UPDATE favoriteVtuber SET notify=1 WHERE _vtuberID=" . $req->getBody()["notify"]);
+                $stmt->execute();
+            }
+        }
+
         return $this->render("list");
     }
 
@@ -41,9 +55,9 @@ class SiteController extends BaseController
             $statement->execute();
 
             foreach ($statement->fetchAll() as $vtuber) {
-                $params[] = [ $vtuber, $vtuberModel->isLive($vtuber["login"], $vtuber["link"]) ];
+                $params[] = [$vtuber, $vtuberModel->isLive($vtuber["login"], $vtuber["link"])];
                 if ($singleVtuber) {
-                    Application::$app->router->title = "WeebSite - ".$vtuber["username"];
+                    Application::$app->router->title = "WeebSite - " . $vtuber["username"];
                 }
             }
         }

@@ -1,8 +1,17 @@
 #+TITLE: Containers
 
 * Contenuti :TOC:
+- [[#perchè-i-container][Perchè i container]]
 - [[#gestione-containers][Gestione containers]]
 - [[#creazione-ed-esecuzione-containers][Creazione ed esecuzione containers]]
+
+* Perchè i container
+Ho deciso di realizzare questo progetto utilizzando i container per poter separare i processi server in esecuzione dall'ambiente di sviluppo.
+In questo modo ho a disposizione 3 container isolati, con il proprio file system, che sono facilmente spostabili ad altre macchine.
+
+Un'alternativa ai container poteva essere l'utilizzo delle virtual machine che però possono causare svariati problemi:
+- utilizzo maggiore delle risorse hardware, dato che una virtual machine ha il proprio hardware virtuale, il proprio sistema operativo, i propri driver e servizi in esecuzione
+- maggiore difficoltà nell'installazione e configurazione dei server, tramite Dockerfile e docker-compose configurare ed installare i server nel container è molto semplice a differenza delle VM dove è necessario eseguire tutto manualmente
 
 * Gestione containers
 La creazione e gestione dei container viene effettuata tramite *docker-compose* ed il file di configurazione [[./docker-compose.yml][docker-compose.yml]].

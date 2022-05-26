@@ -9,9 +9,9 @@ use app\core\Application;
 <head>
     <meta charset="UTF-8" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
-    <link rel="stylesheet" href="/css/main.css" type="text/css" media="screen" />
+    <link rel="stylesheet" href="/css/list.css" type="text/css" media="screen" />
 
-    <title>Document</title>
+    <title><?= $this->title ?></title>
 </head>
 
 <body>
@@ -46,6 +46,7 @@ use app\core\Application;
                 <tr>
                     <th scope="col">Icon</th>
                     <th scope="col">Username</th>
+                    <th scope="col"></th>
                     <th scope="col"></th>
                     <th scope="col"></th>
                 </tr>

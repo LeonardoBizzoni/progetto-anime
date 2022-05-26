@@ -10,28 +10,44 @@
 
 * Realizzazione
 La web app è strutturata seguendo il *Model View Controller* framework.
+Quando un utente visita la pagina, viene inizializzato il core dell'applicazione.
+Il core è dotato di diversi classi fondamentali per il corretto funzionamento della web app, tra cui:
+- Application
+- Router
+- Session
+- Le base class per model e controller
+
 Per gestire le dipendenze e namespaces di PHP viene utilizzato *composer*.
 
 ** Entry point - index.php
-La home page, si occupa di inizializzare l'applicazione ed impostare le route con annesso array [Controller, metodo].
+La home page, si occupa di inizializzare l'applicazione ed impostare le route.
+Una route è formata da:
+- *metodo*: rappresentato dal metodo della classe router utilizzato (/come in esempio/)
+- *path*: il primo parametro da passare al metodo get/post del router (nell'esempio "/")
+- *callback*: il secondo parametro da passare al metodo e può essere:
+    + una funzione che verrà eseguita quando l'utente visita il path specificato
+    + il nome di una *view*, deve coincidere con un file nella directory view
+    + un array formato da [ *ControllerClass*, "*metodo*" ]
 
 #+begin_src php
 $app = new Application(dirname(__DIR__));
-$app->router->get("/", [SiteController::class, "home"]);
+
+# Esempio con funzione
+$app->router->get("/esempio0", function () {
+    echo "hello world!";
+});
+
+# Esempio con sola view
+$app->router->get("/esempio1", "home");
+
+# Esempio con controller
+$app->router->get("/esempio2", [SiteController::class, "home"]);
 #+end_src
 
+Una volta impostate tutte le route disponibili viene chiamato il metodo "run()".
+Questo metodo a sua volta chiama il router per risolvere la richiesta effettuata utente.
+
 ** Core
-*** Main application class
-La classe principale, si occupa di istanziare:
-- la Router class
-- la Request helper class
-- la Response helper class
-
-Rappresenta il fulcro della web app.
-Rende possibile l'accesso a tutte le classi da essa istaziate tramite la viariabile statica "$app".
-
-Gestisce tutti i controller tramite "BaseController".
-
 *** Router class
 Una delle classi principali è il Router, gestisce l'array associativo "$routes" e la risoluzione delle varie request effettuate.
 
@@ -136,8 +152,8 @@ if ($ruleName == self::RULE_MATCH && $value != $this->{$rule["match"]}) {
 #+end_src
 
 *** Database class
-Il compito della Database class è quello di effettuare una connessione al server mariadb in esecuzione sul docker container ed applicare delle [[./www/Migrations][migration]].
-Sia le credenziali di accesso al database che il domain service name (DSN) sono salvate nel file "www/.env" (vedi [[./www/.env.example][.env.example]]) e per leggerle si utilizza il package [[https://github.com/vlucas/phpdotenv][phpdotenv]].
+Il compito della Database class è quello di effettuare una connessione al server mariadb in esecuzione sul docker container ed applicare delle [[./Migrations][migration]].
+Sia le credenziali di accesso al database che il domain service name (DSN) sono salvate nel file "www/.env" (vedi [[./.env.example][.env.example]]) e per leggerle si utilizza il package [[https://github.com/vlucas/phpdotenv][phpdotenv]].
 
 Installazione phpdotenv:
 #+begin_src bash
@@ -150,13 +166,9 @@ Attraverso il metodo "applyMigrations()" la Database class è in grado di:
 - selezionare le migration presenti nella migration table
 - per ogni migration non presente nel DB, creare un'istanza ed esegue il metodo "up()"
 
-*** Database model class
-La classe DbModel si basa sulla base Database class ma viene trattata come l'effettiva SQL table.
-
 ** Migrations
-
 È importante che le migration class siano ordinate e che seguano tutte lo stesso stile di nomeclatura.
-La creazione di una migration class può essere effettuata tramite lo script [[./scripts/createMigration.sh][createMigration]].
+La creazione di una migration class può essere effettuata tramite lo script [[../scripts/createMigration.sh][createMigration]].
 #+begin_src bash
 ./scripts/createMigration pathToMigrationsDir migrationName
 #+end_src
@@ -168,7 +180,7 @@ Ogni migration class è formata da _almeno_ 2 metodi:
 - "down()": esegue del codice SQL per annullare la modifica
 
 ** Models
-Le classi "Model" gestiscono i dati presenti nel database e controlla che i dati seguano delle determinate regole.
+Le classi "Model" gestiscono i dati presenti nel database o inseriti dall'utente e controllano che i dati seguano delle determinate regole.
 Tutte le classi Model derivano dalla classe "BaseModel" o "DbModel".
 
 *** Registration model - User model
@@ -192,13 +204,22 @@ Model utilizzato per interagire con il database di vtuber.
 
 Simile al model di registrazione ma con 2 importanti metodi:
 - *getVtuberInfo()*: controlla che il link inserito sia l'URL ad un canale twitch o youtube ed utilizzando i rispettivi API(Twitch o Google) recupara le informazioni della vtuber in questione
-- *isLive()*: controlla se la vtuber in questione è live o no, utilizzando l'API Twitch o tramite curl request per canali YT
+- *isLive()*: controlla se la vtuber in questione è live o no
 
 ** Controllers
-Le classi "Controller" svolgono il ruolo di ponte.
+Le classi "Controller" svolgono il ruolo di ponte tra:
+- view <-> utente
+- view <-> model
+
 Esse permettono ai dati di apparire nella View richiesta dall'utente una volta prelevati dal database o di venirvi inseriti tramite una form.
 
 *** Authentication controller
-L'authentication controller ha 2 compiti fondamentali:
-- registrare nuovi utenti con l'aiuto della classe "RegisterModel"
-- permettere l'accesso ad utenti già registrati
+L'authentication controller ha 3 compiti fondamentali:
+- registrare nuovi utenti (register)
+- permettere l'accesso ad utenti già registrati (login)
+- permettere ad utente registrati di uscire dal proprio account (logout)
+
+*** SiteController
+Questo controller è il controller principale della pagina, implementa infatti i 2 metodi:
+- *list()*: effettua il check dei dati in trasito verso la pagina contente la lista di vtuber preferite dell'utente
+- *live()*: effettua il check dei dati in trasito verso la pagina principale

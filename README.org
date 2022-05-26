@@ -45,7 +45,6 @@ Il suo compito principale è quello di mostrare e ricevere informazioni dal clie
 
 Ho deciso di utilizzare Nginx come web server per le migliori performance e leggerezza in confronto ad altri web server.
 Inoltre la configura di Nginx è molto più semplice di web server come Apache.
-[[./media/nginxApacheGraph.png]]
 
 *** Application Layer - PHP
 L'application layer rappresenta il cuore dell'applicazione.
@@ -67,10 +66,11 @@ Il data layer si occupa della gestione ed immagazinamento dei dati generati dall
 
 L'installazione del database server mariadb viene anch'essa eseguita tramite un docker container e la container image disponibile su [[https://hub.docker.com/_/mariadb][hub.docker]] per cui non ha bisogno di alcuna configurazione.
 
-**** Schema E/R
+**** Schema E/R ed analisi delle molteplicità
 [[./media/dbER.jpg]]
 
-#TODO: descrizione schema ER
+Un utente può avere più vtuber preferite.
+Una vtuber può essere la preferita di più utenti.
 
 **** Schema logico
 [[./media/dbLogico.jpg]]
