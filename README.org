@@ -4,6 +4,7 @@
 - [[#descrizione-del-progetto][Descrizione del progetto]]
   - [[#home-page][Home page]]
   - [[#list-page][List page]]
+- [[#progettazione][Progettazione]]
 - [[#setup][Setup]]
   - [[#configurazione-ed-installazione-server][Configurazione ed installazione server]]
 
@@ -30,6 +31,8 @@ L'utente può quindi:
 - decidere di rimuovere una vtuber dai suoi preferiti
 - disabilitare l'invio delle notifiche via email.
 
+* Progettazione
+[[./media/wbs.jpg]]
 * DONE Setup
 ** Configurazione ed installazione server
 L'architettura a 3 livelli è un'architettura software che organizza il codice in 3 livelli logici:
