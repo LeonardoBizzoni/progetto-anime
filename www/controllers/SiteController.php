@@ -33,6 +33,7 @@ class SiteController extends BaseController
     public function live(Request $req)
     {
         $vtuberLive = [];
+        $favorites = [];
         $singleVtuber = false;
         $vtuberModel = new Vtubers;
 

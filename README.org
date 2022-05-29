@@ -12,9 +12,9 @@
 Attraverso la web app è possibile visualizzare quali vtuber sono attualmente live e partecipare ad una di esse senza doversi recare sul sito di streaming da loro adottato.
 Gli utenti registrati possono anche aggiungere una vtuber alla loro lista personale di vtuber preferite e ricevere una notifica via email quando una di esse va in onda.
 
-Un utente può anche richiedere l'aggiunta di una vtuber al catalogo della web app, qualora essa non ne faccia già parte, semplicemente inviando, tramite l'apposito form, l'URL al canale della vtuber, sia esso su [[twitch.tv/][twitch]] o [[youtube.com/][youtube]].
+Un utente può anche richiedere l'aggiunta di una vtuber al catalogo della web app, qualora essa non ne faccia già parte, semplicemente inviando, tramite l'apposito form, l'URL al canale della vtuber, sia esso su [[https://www.twitch.tv/][Twitch]] o [[https://www.youtube.com/][YouTube]].
 
-** DONE Home page
+** Home page
 Attraverso la pagina "home" è possibile partecipare alla stream di una vtuber direttamente senza recarsi sul sito di streaming da loro utilizzato.
 Appena si visita quasta pagina vengono visualizzate 2 liste:
 - *In live*: lista di tutte le vtuber presenti nel catalogo attualmente in onda
@@ -25,7 +25,7 @@ Se l'utente è registrato allora viene visualizzata un'ulteriore lista che mostr
 L'aggiunta di una vtuber viene effettuata tramite l'apposito form visibile agli utenti registrati tramite il tasto "Add vtuber".
 Una volta cliccato verrà chiesto all'utente l'inserimento dell'URL del canale della vtuber che desidera venga aggiunta al catalogo.
 
-** TODO List page
+** List page
 Attraverso la pagina "list", visibile solo agli utenti registrati, un utente può gestire le sue vtuber preferite.
 L'utente può quindi:
 - decidere di rimuovere una vtuber dai suoi preferiti
@@ -33,7 +33,8 @@ L'utente può quindi:
 
 * Progettazione
 [[./media/wbs.jpg]]
-* DONE Setup
+
+* Setup
 ** Configurazione ed installazione server
 L'architettura a 3 livelli è un'architettura software che organizza il codice in 3 livelli logici:
 - Presentation layer: interfaccia con l'utente
@@ -88,3 +89,4 @@ La tabella *migrations* viene utilizzata per tenere traccia delle migrazioni app
 Per effettuare una modifica al database si utilizza lo script PHP [[./www/migrationScript.php][migrationScript]], questo prende *in ordine* tutte le *classi migration* presenti nella directory [[./www/Migrations][Migrations]].
 Lo script chiama di ogni classe il metodo "*up()*" che applica la modifica al database, crea una nuova entry nella tabella migrations per indicare che la migration in questione è stata applicata.
 Prima di eseguire il metodo "up()" controlla che la migration non sia già stata applicata cercando una entry che abbia il nome della migration, se lo trova non esegue il metodo "up()" e prosegue con la successiva migration, se non lo trova deve eserguirla ed aggiungere una entry nella tabella.
+
