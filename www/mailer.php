@@ -22,39 +22,44 @@ $config = [
 
 $app = new Application(__DIR__, $config);
 
-$stmt = $app->db->pdo->prepare("
-select email, vtubers.username, vtubers.id, notify
+while (true) {
+    $stmt = $app->db->pdo->prepare("
+select email, vtubers.username, vtubers.id, notify, sent
 from users, vtubers, favoriteVtuber
 where _vtuberID=vtubers.id
 and _userID=users.id
+and sent=0
 and notify=1");
 
-$stmt->execute();
-$data = $stmt->fetchAll();
+    $stmt->execute();
+    $data = $stmt->fetchAll();
 
+    foreach ($data as $row) {
+        // var_dump($row);
+        $mail = new PHPMailer;
+        $mail->IsSMTP(); // telling the class to use SMTP
+        $mail->SMTPAuth = true;
+        $mail->SMTPSecure = "ssl";
+        $mail->Host = "smtp.gmail.com";
+        $mail->Port = "465";
 
-foreach ($data as $row) {
-    // var_dump($row);
-    $mail = new PHPMailer;
-    $mail->IsSMTP(); // telling the class to use SMTP
-    $mail->SMTPAuth = true;
-    $mail->SMTPSecure = "ssl";
-    $mail->Host = "smtp.gmail.com";
-    $mail->Port = "465";
+        $mail->Username = Application::$app->config["mail"]["username"];
+        $mail->Password = Application::$app->config["mail"]["pass"];
 
-    $mail->Username = Application::$app->config["mail"]["username"];
-    $mail->Password = Application::$app->config["mail"]["pass"];
+        $mail->SetFrom($mail->Username);
 
-    $mail->SetFrom($mail->Username);
+        $mail->Subject    = $row["username"] . " is live!";
+        $mail->Body       = " ";
 
-    $mail->Subject    = $row["username"] . " is live!";
-    $mail->Body       = " ";
+        $mail->AddAddress($row["email"]);
 
-    $mail->AddAddress($row["email"]);
+        if (!$mail->Send()) {
+            echo "Mailer Error: " . $mail->ErrorInfo . "\n";
+        } else {
+            echo "Message sent!\n";
+            $stmt = $app->db->pdo->prepare("update vtubers set sent=1 where id=".$row["id"]);
 
-    if (!$mail->Send()) {
-        echo "Mailer Error: " . $mail->ErrorInfo . "\n";
-    } else {
-        echo "Message sent!\n";
+            $stmt->execute();
+        }
     }
 }
