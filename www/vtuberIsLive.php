@@ -76,7 +76,7 @@ while (true) {
                 $tag = $result->item($i)->getAttribute("href");
                 if (str_contains($tag, "https://www.youtube.com/watch?v=")) {
                     echo "{$vtuber["username"]} - $tag\n";
-                    $stmt = $app->db->pdo->prepare("update vtubers set live='$tag', sent=0 where live=NULL and id=" . $vtuber["id"]);
+                    $stmt = $app->db->pdo->prepare("update vtubers set live='$tag', sent=0 where live IS NULL and id=" . $vtuber["id"]);
                     $stmt->execute();
                     $isLive = true;
                 }
