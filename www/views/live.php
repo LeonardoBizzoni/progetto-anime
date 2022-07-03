@@ -8,10 +8,15 @@ if (isset($_GET["aggiungi"])) {
 }
 
 if (count($model->errors) > 0) {
-    echo "<pre>";
-    var_dump($model->errors);
-    echo "</pre>";
-} else if (!isset($_GET["id"])) {
+    echo "
+<div class=\"alert alert-danger\" role=\"alert\">
+  <h4 class=\"alert-heading\">Invalid channel link!</h4>
+  <p>The link you provided it's either not correct or already in the list.<br>Try again.</p>
+</div>
+";
+}
+
+else if (!isset($_GET["id"])) {
     echo "<h1>Live page</h1>";
 ?>
     <!-- Modal -->

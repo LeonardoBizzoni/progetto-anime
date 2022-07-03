@@ -2,6 +2,7 @@
 
 namespace app\models;
 
+use \DOMDocument;
 use app\core\Application;
 use app\core\DbModel;
 use Google_Client;
@@ -80,8 +81,33 @@ class Vtubers extends DbModel
             $client->setDeveloperKey(Application::$app->config["yt"]["key"]);
             $service = new Google_Service_YouTube($client);
 
-            $id = str_replace("https://www.youtube.com/channel/", "", $this->link);
-            $response = get_object_vars($service->channels->listChannels('snippet', ["id" => $id]));
+            if (str_contains($this->link, "https://www.youtube.com/channel/")) {
+                $id = str_replace("https://www.youtube.com/channel/", "", $this->link);
+            } else if (str_contains($this->link, "https://www.youtube.com/c/")) {
+                    $ch = curl_init($this->link);
+                    curl_setopt($ch, CURLOPT_URL, $this->link);
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+                    $result = curl_exec($ch);
+                    curl_close($ch);
+
+                    $doc = new DOMDocument();
+                    libxml_use_internal_errors(true);
+                    $doc->loadHTML($result);
+
+                    $result = $doc->getElementsByTagName("link");
+                    $length = $result->length;
+
+                    for ($i = 0; $i < $length; $i++) {
+                        $tag = $result->item($i)->getAttribute("href");
+
+                        if (str_contains($tag, "https://www.youtube.com/channel/")) {
+                            $id = str_replace("https://www.youtube.com/channel/", "", $tag);
+                            break;
+                        }
+                    }
+            }
+            $response = get_object_vars($service->channels->listChannels('snippet', [ 'id' => $id ]));
 
             $this->username = $response["items"][0]["snippet"]["title"];
             $this->login = $id;
