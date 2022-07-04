@@ -69,7 +69,6 @@ class Router
 
     private function loadViewContent(string $view, array $params)
     {
-        # modo epico per creare variabili con lo stesso nome assegnato nell'array!!
         foreach ($params as $key => $value) {
             $$key = $value;
         }
